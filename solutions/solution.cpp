@@ -18,5 +18,5 @@ vector<int> sortedSquares(vector<int>& nums) {
         pos--;
     }
 
-    return result;
+    return result;//vdsvd
 }
