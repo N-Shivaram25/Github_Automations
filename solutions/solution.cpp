@@ -15,7 +15,7 @@ vector<int> sortedSquares(vector<int>& nums) {
             result[pos] = nums[right] * nums[right];
             right--;
         }
-        pos--;//2d
+        pos--;//2dsfsd
     }
 
     return result;//vdsvd
