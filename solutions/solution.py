@@ -3,7 +3,7 @@ from typing import List
 class Solution:
     def sortedSquares(self, nums: List[int]) -> List[int]:
         n = len(nums)
-        result = [0] * n  # Create an output array of the same size
+        result = [0] * n  # Create an output a
         left, right = 0, n - 1
         index = n - 1  # Start filling from the end
 
