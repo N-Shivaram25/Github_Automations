@@ -5,7 +5,7 @@ class Solution:
         n = len(nums)
         result = [0] * n  # Create an output a
         left, right = 0, n - 1
-        index = n - 1  # Start filling from the end
+        index = n - 1  # Start filling from the ends
 
         while left <= right:
             left_square = nums[left] ** 2
