@@ -4,8 +4,10 @@ on:
   push:
     paths:
       - "solutions/**"
+      - "tests/**"
   pull_request:
     paths:
+      - "solutions/**"
       - "tests/**"
 
 jobs:
@@ -24,12 +26,12 @@ jobs:
           if [ -z "$BEFORE_COMMIT" ] || ! git cat-file -e "$BEFORE_COMMIT"^{commit}; then
             BEFORE_COMMIT=$(git rev-parse HEAD~1)  # Use last commit as fallback
           fi
-          
-          CHANGED_FILES=$(git diff --name-only "$BEFORE_COMMIT" HEAD | grep '^solutions/')
+
+          CHANGED_FILES=$(git diff --name-only "$BEFORE_COMMIT" HEAD | grep -E '^solutions/|^tests/')
           echo "Detected changed files: $CHANGED_FILES"
-          
+
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No file changes detected. Exiting..."
+            echo "No relevant file changes detected. Exiting..."
             exit 1
           fi
 
@@ -48,47 +50,47 @@ jobs:
           done
 
       - name: Install C Dependencies
-        if: env.LANGUAGE == 'C'
+        if: contains(env.LANGUAGE, 'C')
         run: sudo apt update && sudo apt install -y gcc
 
       - name: Install C++ Dependencies
-        if: env.LANGUAGE == 'C++'
+        if: contains(env.LANGUAGE, 'C++')
         run: sudo apt update && sudo apt install -y g++
 
       - name: Install Python Dependencies
-        if: env.LANGUAGE == 'Python'
-        run: sudo apt update && sudo apt install -y python3
+        if: contains(env.LANGUAGE, 'Python')
+        run: sudo apt update && sudo apt install -y python3 python3-pip
 
       - name: Install Java Dependencies
-        if: env.LANGUAGE == 'Java'
+        if: contains(env.LANGUAGE, 'Java')
         run: sudo apt update && sudo apt install -y openjdk-17-jdk
 
       - name: Compile and Run C Tests
-        if: env.LANGUAGE == 'C'
+        if: contains(env.LANGUAGE, 'C')
         run: |
           gcc solutions/solution.c tests/test.c -o test_runner
           echo "Running C Test Cases..."
           ./test_runner | tee test_results.log
 
       - name: Compile and Run C++ Tests
-        if: env.LANGUAGE == 'C++'
+        if: contains(env.LANGUAGE, 'C++')
         run: |
           g++ solutions/solution.cpp tests/test.cpp -o test_runner_cpp
           echo "Running C++ Test Cases..."
           ./test_runner_cpp | tee test_results.log
 
       - name: Run Python Tests
-        if: env.LANGUAGE == 'Python'
+        if: contains(env.LANGUAGE, 'Python')
         run: |
           echo "Running Python Test Cases..."
-          python3 tests/test.py | tee test_results.log
+          python3 -m unittest discover tests | tee test_results.log
 
       - name: Compile and Run Java Tests
-        if: env.LANGUAGE == 'Java'
+        if: contains(env.LANGUAGE, 'Java')
         run: |
-          javac -d . solutions/Solution.java tests/Test.java  # Compile with package structure
+          javac tests/Test.java
           echo "Running Java Test Cases..."
-          java tests.Test | tee test_results.log  # Run Java tests
+          java -cp tests Test | tee test_results.log
 
       - name: Upload Test Results
         if: always()
