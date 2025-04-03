@@ -32,10 +32,10 @@ jobs:
 
         for FILE in $CHANGED_FILES; do
           case "$FILE" in
-            *.c) RUN_C=1 ;;
-            *.cpp) RUN_CPP=1 ;;
-            *.py) RUN_PYTHON=1 ;;
-            *.java) RUN_JAVA=1 ;;
+            solutions/*.c) RUN_C=1 ;;
+            solutions/*.cpp) RUN_CPP=1 ;;
+            solutions/*.py) RUN_PYTHON=1 ;;
+            solutions/*.java) RUN_JAVA=1 ;;
           esac
         done
 
@@ -44,16 +44,17 @@ jobs:
         echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
         echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
 
-    # Install Dependencies
     - name: Install Dependencies
       run: |
+        set -e
         sudo apt-get update
-        [[ "$RUN_C" == "1" ]] && sudo apt-get install -y gcc
-        [[ "$RUN_CPP" == "1" ]] && sudo apt-get install -y g++
-        [[ "$RUN_PYTHON" == "1" ]] && python3 -m pip install --upgrade pip pytest
-        [[ "$RUN_JAVA" == "1" ]] && sudo apt-get install -y default-jdk
+        if [[ "$RUN_C" == "1" || "$RUN_CPP" == "1" || "$RUN_JAVA" == "1" ]]; then
+          sudo apt-get install -y gcc g++ default-jdk
+        fi
+        if [[ "$RUN_PYTHON" == "1" ]]; then
+          python3 -m pip install --upgrade pip pytest
+        fi
 
-    # Compile and Run C Tests
     - name: Compile and Run C Tests
       if: env.RUN_C == '1'
       run: |
@@ -61,7 +62,6 @@ jobs:
         gcc -o tests/test tests/test.c solutions/solution.c
         ./tests/test
 
-    # Compile and Run C++ Tests
     - name: Compile and Run C++ Tests
       if: env.RUN_CPP == '1'
       run: |
@@ -69,7 +69,6 @@ jobs:
         g++ -o tests/test tests/test.cpp solutions/solution.cpp
         ./tests/test
 
-    # Run Python Tests (Formatted Output)
     - name: Run Python Tests (Formatted Output)
       if: env.RUN_PYTHON == '1'
       run: |
@@ -78,7 +77,6 @@ jobs:
         export PYTHONPATH=$PWD  
         python3 tests/test.py | tee test_results.log
 
-    # Compile and Run Java Tests
     - name: Compile and Run Java Tests
       if: env.RUN_JAVA == '1'
       run: |
@@ -86,8 +84,8 @@ jobs:
         javac -d . solutions/Solution.java tests/Test.java
         java tests.Test
 
-    # Upload Test Results
     - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
