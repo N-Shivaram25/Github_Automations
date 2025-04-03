@@ -1,6 +1,8 @@
+package solutions; // Added package declaration to avoid import issues
+
 import java.util.Arrays;
 
-class Solution {
+public class Solution {
     public int[] sortedSquares(int[] nums) {
         int n = nums.length;
         int[] result = new int[n];
@@ -21,14 +23,5 @@ class Solution {
         }
 
         return result;
-    }
-
-    // Testing the function
-    public static void main(String[] args) {
-        Solution solution = new Solution();
-        int[] nums = {-4, -1, 0, 3, 10};
-        int[] result = solution.sortedSquares(nums);
-
-        System.out.println("Sorted Squares: " + Arrays.toString(result));
     }
 }
