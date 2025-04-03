@@ -7,7 +7,7 @@ public class Solution {
         int n = nums.length;
         int[] result = new int[n];
         int left = 0, right = n - 1;
-        int index = n - 1; //svdfgd
+        int index = n - 1; //svdfgd //sdfsdfs
 
         while (left <= right) {
             int leftSquare = nums[left] * nums[left];
