@@ -20,7 +20,7 @@ class Solution:
 
             index -= 1  # Move to t
 
-        return result#asfsw
+        return result#4
 
 # Testing the function
 if __name__ == "__main__":

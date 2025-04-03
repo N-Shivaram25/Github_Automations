@@ -20,67 +20,69 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v44
 
-    - name: Determine File Type
+    - name: Determine File Types
+      id: detect-language
       run: |
         echo "Checking which files changed..."
         CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+        RUN_C=0
+        RUN_CPP=0
+        RUN_PYTHON=0
+        RUN_JAVA=0
+
         for FILE in $CHANGED_FILES; do
           case "$FILE" in
-            *.c) echo "C file detected"; echo "LANGUAGE=C" >> $GITHUB_ENV ;;
-            *.cpp) echo "C++ file detected"; echo "LANGUAGE=CPP" >> $GITHUB_ENV ;;
-            *.py) echo "Python file detected"; echo "LANGUAGE=Python" >> $GITHUB_ENV ;;
-            *.java) echo "Java file detected"; echo "LANGUAGE=Java" >> $GITHUB_ENV ;;
+            *.c) RUN_C=1 ;;
+            *.cpp) RUN_CPP=1 ;;
+            *.py) RUN_PYTHON=1 ;;
+            *.java) RUN_JAVA=1 ;;
           esac
         done
 
-    # Install Dependencies for C
-    - name: Install C Dependencies
-      if: contains(env.LANGUAGE, 'C')
-      run: sudo apt-get install -y gcc
+        echo "RUN_C=$RUN_C" >> $GITHUB_ENV
+        echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
+        echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
+        echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
 
-    # Install Dependencies for C++
-    - name: Install C++ Dependencies
-      if: contains(env.LANGUAGE, 'CPP')
-      run: sudo apt-get install -y g++
-
-    # Install Dependencies for Python
-    - name: Install Python Dependencies
-      if: contains(env.LANGUAGE, 'Python')
+    # Install Dependencies
+    - name: Install Dependencies
       run: |
-        python3 -m pip install --upgrade pip pytest
-
-    # Install Dependencies for Java
-    - name: Install Java Dependencies
-      if: contains(env.LANGUAGE, 'Java')
-      run: sudo apt-get install -y default-jdk
+        sudo apt-get update
+        [[ "$RUN_C" == "1" ]] && sudo apt-get install -y gcc
+        [[ "$RUN_CPP" == "1" ]] && sudo apt-get install -y g++
+        [[ "$RUN_PYTHON" == "1" ]] && python3 -m pip install --upgrade pip pytest
+        [[ "$RUN_JAVA" == "1" ]] && sudo apt-get install -y default-jdk
 
     # Compile and Run C Tests
     - name: Compile and Run C Tests
-      if: contains(env.LANGUAGE, 'C')
+      if: env.RUN_C == '1'
       run: |
+        echo "Running C Test Cases..."
         gcc -o tests/test tests/test.c solutions/solution.c
         ./tests/test
 
     # Compile and Run C++ Tests
     - name: Compile and Run C++ Tests
-      if: contains(env.LANGUAGE, 'CPP')
+      if: env.RUN_CPP == '1'
       run: |
+        echo "Running C++ Test Cases..."
         g++ -o tests/test tests/test.cpp solutions/solution.cpp
         ./tests/test
 
-    # Run Python Tests (With Formatted Output)
-    - name: Run Python Tests (With Print Output)
-      if: contains(env.LANGUAGE, 'Python')
+    # Run Python Tests (Formatted Output)
+    - name: Run Python Tests (Formatted Output)
+      if: env.RUN_PYTHON == '1'
       run: |
         echo "Running Python Test Cases..."
-        export PYTHONUNBUFFERED=1  # Ensure output appears live
-        export PYTHONPATH=$PWD  # Fix ImportError by setting correct module path
+        export PYTHONUNBUFFERED=1  
+        export PYTHONPATH=$PWD  
         python3 tests/test.py | tee test_results.log
 
     # Compile and Run Java Tests
     - name: Compile and Run Java Tests
-      if: contains(env.LANGUAGE, 'Java')
+      if: env.RUN_JAVA == '1'
       run: |
+        echo "Running Java Test Cases..."
         javac -d . solutions/Solution.java tests/Test.java
         java tests.Test
 
