@@ -1,24 +1,21 @@
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
 vector<int> sortedSquares(vector<int>& nums) {
-    int n = nums.size();
-    vector<int> result(n);
-    int left = 0, right = n - 1;
-    int index = n - 1;
+    int left = 0, right = nums.size() - 1, pos = nums.size() - 1;
+    vector<int> result(nums.size());
 
     while (left <= right) {
-        int leftSquare = nums[left] * nums[left];
-        int rightSquare = nums[right] * nums[right];
-
-        if (leftSquare > rightSquare) {
-            result[index--] = leftSquare;
+        if (abs(nums[left]) > abs(nums[right])) {
+            result[pos] = nums[left] * nums[left];
             left++;
         } else {
-            result[index--] = rightSquare;
+            result[pos] = nums[right] * nums[right];
             right--;
         }
+        pos--;
     }
 
     return result;

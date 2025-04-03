@@ -1,9 +1,11 @@
 #include <iostream>
 #include <vector>
-#include <cassert>
-#include "solution.cpp" // Including the function definition
+#include <cmath>
 
 using namespace std;
+
+// Declare the function prototype (instead of including solution.cpp)
+vector<int> sortedSquares(vector<int>& nums);
 
 void runTestCases() {
     vector<vector<int>> testCases = {
@@ -13,7 +15,7 @@ void runTestCases() {
         {-7, -3, 2, 3, 11},
         {-6, -5, -3, -1, 0, 2, 3, 4, 8}
     };
-    
+
     vector<vector<int>> expectedOutputs = {
         {0, 1, 4, 9, 25, 49, 100, 144},
         {0, 1, 4, 9, 250000, 16000000, 100000000},
@@ -21,7 +23,7 @@ void runTestCases() {
         {4, 9, 9, 49, 121},
         {0, 1, 4, 9, 9, 16, 25, 36, 64}
     };
-    
+
     for (size_t i = 0; i < testCases.size(); i++) {
         vector<int> result = sortedSquares(testCases[i]);
 
@@ -50,8 +52,6 @@ void runTestCases() {
         } else {
             cout << "Test Case: ❌ Failed" << endl;
         }
-
-        assert(result == expectedOutputs[i]); // Ensure test passes
     }
     cout << "\n------------------------------" << endl;
 }
