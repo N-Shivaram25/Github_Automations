@@ -1,25 +1,9 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
-using namespace std;
+#include <cassert>
+#include "solution.cpp" // Including the function definition
 
-vector<int> sortedSquares(vector<int>& nums) {
-    int left = 0, right = nums.size() - 1, pos = nums.size() - 1;
-    vector<int> result(nums.size());
-    
-    while (left <= right) {
-        if (abs(nums[left]) > abs(nums[right])) {
-            result[pos] = nums[left] * nums[left];
-            left++;
-        } else {
-            result[pos] = nums[right] * nums[right];
-            right--;
-        }
-        pos--;
-    }
-    
-    return result;
-}
+using namespace std;
 
 void runTestCases() {
     vector<vector<int>> testCases = {
@@ -40,7 +24,7 @@ void runTestCases() {
     
     for (size_t i = 0; i < testCases.size(); i++) {
         vector<int> result = sortedSquares(testCases[i]);
-        
+
         cout << "\n------------------------------" << endl;
         cout << "Test Case " << (i + 1) << endl;
         cout << "Given Input: {";
@@ -48,24 +32,26 @@ void runTestCases() {
             cout << testCases[i][j] << (j < testCases[i].size() - 1 ? ", " : "");
         }
         cout << "}" << endl;
-        
+
         cout << "Expected Output: {";
         for (size_t j = 0; j < expectedOutputs[i].size(); j++) {
             cout << expectedOutputs[i][j] << (j < expectedOutputs[i].size() - 1 ? ", " : "");
         }
         cout << "}" << endl;
-        
+
         cout << "Your Output: {";
         for (size_t j = 0; j < result.size(); j++) {
             cout << result[j] << (j < result.size() - 1 ? ", " : "");
         }
         cout << "}" << endl;
-        
+
         if (result == expectedOutputs[i]) {
             cout << "Test Case: ✅ Passed" << endl;
         } else {
             cout << "Test Case: ❌ Failed" << endl;
         }
+
+        assert(result == expectedOutputs[i]); // Ensure test passes
     }
     cout << "\n------------------------------" << endl;
 }
