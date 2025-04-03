@@ -18,7 +18,7 @@ class Solution:
                 result[index] = right_square
                 right -= 1
 
-            index -= 1  # Move to the next position543454
+            index -= 1  # Move to the next position9
 
         return result#asfsw
 

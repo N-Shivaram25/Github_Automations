@@ -59,9 +59,7 @@ jobs:
 
       - name: Install Python Dependencies
         if: contains(env.LANGUAGE, 'Python')
-        run: |
-          sudo apt update && sudo apt install -y python3 python3-pip
-          pip3 install pytest
+        run: sudo apt update && sudo apt install -y python3 python3-pip
 
       - name: Install Java Dependencies
         if: contains(env.LANGUAGE, 'Java')
@@ -86,15 +84,15 @@ jobs:
         run: |
           echo "Running Python Test Cases..."
           export PYTHONUNBUFFERED=1  # Ensure print statements appear in logs
-          export PYTHONPATH=solutions/
-          pytest -s tests/test.py | tee test_results.log  # -s allows print() visibility
+          export PYTHONPATH=$PWD  # Fix ImportError by setting project root as Python path
+          pytest -s tests/test.py | tee test_results.log
 
       - name: Compile and Run Java Tests
         if: contains(env.LANGUAGE, 'Java')
         run: |
-          javac -d . solutions/Solution.java tests/Test.java
+          javac tests/Test.java
           echo "Running Java Test Cases..."
-          java tests.Test | tee test_results.log
+          java -cp tests Test | tee test_results.log
 
       - name: Upload Test Results
         if: always()
