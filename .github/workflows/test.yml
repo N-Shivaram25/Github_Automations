@@ -86,9 +86,9 @@ jobs:
       - name: Compile and Run Java Tests
         if: env.LANGUAGE == 'Java'
         run: |
-          javac tests/Test.java
+          javac -d . solutions/Solution.java tests/Test.java  # Compile with package structure
           echo "Running Java Test Cases..."
-          java -cp tests Test | tee test_results.log
+          java tests.Test | tee test_results.log  # Run Java tests
 
       - name: Upload Test Results
         if: always()
