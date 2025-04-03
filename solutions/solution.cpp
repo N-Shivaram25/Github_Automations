@@ -10,7 +10,7 @@ vector<int> sortedSquares(vector<int>& nums) {
     while (left <= right) {
         if (abs(nums[left]) > abs(nums[right])) {
             result[pos] = nums[left] * nums[left];
-            left++;
+            left++;//ss
         } else {
             result[pos] = nums[right] * nums[right];
             right--;
