@@ -24,7 +24,7 @@ class Solution:
 
 # Testing the function
 if __name__ == "__main__":
-    solution = Solution()
+    solution = Solution() #dscdsf
     nums = [-4, -1, 0, 3, 10]
     result = solution.sortedSquares(nums)
     print("Sorted Squares:", result)
