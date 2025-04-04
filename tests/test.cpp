@@ -4,7 +4,7 @@
 
 using namespace std;
 
-// Declare the function prototype (instead of including solution.cpp)
+// Declare the function prototype (instead of including solution.cpp)s
 vector<int> sortedSquares(vector<int>& nums);
 
 void runTestCases() {
