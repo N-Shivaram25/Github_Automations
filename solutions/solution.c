@@ -4,7 +4,7 @@
 void sortedSquares(int* nums, int size, int* result) {
     int left = 0, right = size - 1, pos = size - 1;
 
-    while (left <= right) {//fgdg
+    while (left <= right) {//fgdgs
         if (abs(nums[left]) > abs(nums[right])) {
             result[pos] = nums[left] * nums[left];
             left++;
