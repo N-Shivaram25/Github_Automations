@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "../solutions/solution.c" // Contains searchKey and buildLinkedList
+#include "../solutions/solution.c"
 
 void runTestCases() {
     int testInputs[5][10] = {
-        {1, 3, 5, 7, 9},            // Test Case 1
-        {100000},                  // Test Case 2
-        {1, 2, 3, 4, 5, 6},        // Test Case 3
-        {10, 20, 30, 40, 50},      // Test Case 4
-        {99999, 100000}            // Test Case 5
+        {1, 3, 5, 7, 9},
+        {100000},
+        {1, 2, 3, 4, 5, 6},
+        {10, 20, 30, 40, 50},
+        {99999, 100000}
     };
 
     int sizes[5] = {5, 1, 6, 5, 2};
