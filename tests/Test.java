@@ -1,15 +1,17 @@
-class Node {
-    int data;
-    Node next;
-    Node(int data) {
-        this.data = data;
-        this.next = null;
+public class Test {
+
+    // Use the Node class from Solution.java
+    public static Node buildLinkedList(int[] values, int size) {
+        if (size == 0) return null;
+
+        Node head = new Node(values[0]);
+        Node current = head;
+        for (int i = 1; i < size; i++) {
+            current.next = new Node(values[i]);
+            current = current.next;
+        }
+        return head;
     }
-}
-
-// Assume searchKey and buildLinkedList methods are defined
-
-public class Test{
 
     public static void runTestCases() {
         int[][] testInputs = {
@@ -26,7 +28,7 @@ public class Test{
 
         for (int i = 0; i < 5; i++) {
             Node head = buildLinkedList(testInputs[i], sizes[i]);
-            boolean result = searchKey(sizes[i], head, keysToSearch[i]);
+            boolean result = Solution.searchKey(sizes[i], head, keysToSearch[i]);
 
             System.out.println("\n-----------------------------");
             System.out.println("Test Case " + (i + 1));
@@ -42,5 +44,9 @@ public class Test{
             System.out.println("Your Output: " + result);
             System.out.println("Test Case: " + (result == expectedResults[i] ? "✅ Passed" : "❌ Failed"));
         }
+    }
+
+    public static void main(String[] args) {
+        runTestCases();
     }
 }
