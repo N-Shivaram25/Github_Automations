@@ -1,5 +1,6 @@
 import sys
-sys.path.append("../solutions")  # ✅ FIX: lowercase 'solutions'
+sys.path.append("../solutions") 
+
 
 from solution import Node, Solution, build_linked_list
 
