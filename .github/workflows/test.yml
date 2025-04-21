@@ -1,4 +1,4 @@
-name: Run Linked List Search Tests
+name: Run Language-Specific Tests
 
 on:
   push:
@@ -54,8 +54,8 @@ jobs:
       - name: Stop if multiple solution files changed
         if: env.SOLUTION_COUNT != '1'
         run: |
-          echo "❌ Skipping execution because $SOLUTION_COUNT solution files were changed. Only one is allowed."
-          exit 0
+          echo "❌ You cannot push multiple codes. Only one solution file can be changed at a time."
+          exit 1
 
       - name: Install C Dependencies
         if: env.RUN_C == '1'
@@ -102,8 +102,9 @@ jobs:
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
-          javac -d . solutions/Solution.java tests/Test.java
-          java tests.Test
+          mkdir -p out
+          javac -d out solutions/Solution.java tests/Test.java
+          java -cp out Test
 
       - name: Upload Test Results (Python only)
         if: env.RUN_PYTHON == '1'
