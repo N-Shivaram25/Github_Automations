@@ -9,7 +9,7 @@ struct Node {
 
 //dsgdsgsdsssssffs
 bool searchKey(int n, struct Node* head, int key) {
-    // write your code hereddd
+    // write your code hereddds
 }
 
 
