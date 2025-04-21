@@ -7,7 +7,7 @@ class Solution {
               if (current->data == key) {
                   return true;
               }
-              current = current->next;
+              current = current->next;//sfsfgg
           }
           return false;
       }  
