@@ -4,7 +4,7 @@ class Node {
 
     Node(int d) {
         data = d;
-        next = null;
+        next = null;///dfgdgsdsd
     }
 }
 
