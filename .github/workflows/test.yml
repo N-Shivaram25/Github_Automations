@@ -90,10 +90,11 @@ jobs:
             exit 1
           fi
           ./tests/test | tee c_test_results.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
             echo "❌ C tests failed"
             cat c_test_results.log
-            exit 1
+            exit $TEST_EXIT_CODE
           fi
 
       - name: Upload C Test Results
