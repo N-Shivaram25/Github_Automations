@@ -84,27 +84,27 @@ jobs:
         if: env.RUN_C == '1'
         run: |
           gcc -o tests/test tests/test.c solutions/solution.c
-          ./tests/test
+          ./tests/test || (echo "❌ Code is wrong, Test cases are Failed" && exit 1)
 
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
           g++ -o tests/test tests/test.cpp solutions/solution.cpp
-          ./tests/test
+          ./tests/test || (echo "❌ Code is wrong, Test cases are Failed" && exit 1)
 
       - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
         run: |
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          python3 tests/test.py | tee test_results.log
+          python3 tests/test.py | tee test_results.log || (echo "❌ Code is wrong, Test cases are Failed" && exit 1)
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
           mkdir -p out
           javac -d out solutions/Solution.java tests/Test.java
-          java -cp out Test
+          java -cp out Test || (echo "❌ Code is wrong, Test cases are Failed" && exit 1)
 
       - name: Upload Test Results (Python only)
         if: env.RUN_PYTHON == '1'
