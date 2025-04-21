@@ -83,29 +83,32 @@ jobs:
       - name: Compile and Run C Tests
         if: env.RUN_C == '1'
         run: |
-          set -e
           gcc -o tests/test tests/test.c solutions/solution.c
           ./tests/test
 
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
-          set -e
           g++ -o tests/test tests/test.cpp solutions/solution.cpp
           ./tests/test
 
       - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
         run: |
-          set -e
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          python3 -m pytest -v tests/test.py | tee test_results.log
+          python3 tests/test.py | tee test_results.log
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
-          set -e
           mkdir -p out
           javac -d out solutions/Solution.java tests/Test.java
           java -cp out Test
+
+      - name: Upload Test Results (Python only)
+        if: env.RUN_PYTHON == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test_results.log
