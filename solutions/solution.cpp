@@ -1,3 +1,8 @@
+struct Node {
+    int data;
+    Node* next;
+};
+
 class Solution {
     public:
       // Function to search for a key in the linked list.
