@@ -7,7 +7,7 @@ struct Node {
 
 bool searchKey(int n, struct Node* head, int key) {
     struct Node* current = head;
-    while (current != NULL) {
+    while (current != NULL) {///sfsfgds
         if (current->data == key) {
             return true;
         }
