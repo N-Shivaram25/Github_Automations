@@ -25,6 +25,6 @@ public class Solution {
             if (current.data == key) return true;
             current = current.next;
         }
-        return false; ///sdfsdfsd   /sdgsdgsd
+        return false; ///sdfsdfsd     //sdgsgsdgggdsgd
     }
 }
