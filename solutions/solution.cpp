@@ -10,7 +10,7 @@ class Solution {
           Node* current = head;
           while (current != nullptr) {
               if (current->data == key) {
-                  return true;
+                  return true;//fdfgd
               }
               current = current->next;//sfsfgg
           }
