@@ -17,7 +17,7 @@ def build_linked_list(arr):
         return None
     head = Node(arr[0])
     current = head
-    for val in arr[1:]:
+    for val in arr[1:]:#fvssvfvds
         current.next = Node(val)
         current = current.next
     return head

@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../Solutions")  # Adding the Solutions folder to the path
+
 from solution import Node, Solution, build_linked_list
 
 def run_test_cases():
