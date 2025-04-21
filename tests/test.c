@@ -1,7 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include "../solutions/solution.c"
+
+// Declare structs and function signatures (no definitions here)
+struct Node {
+    int data;
+    struct Node* next;
+};
+
+bool searchKey(int n, struct Node* head, int key);
+struct Node* buildLinkedList(int arr[], int size);
 
 void runTestCases() {
     int testInputs[5][10] = {
@@ -35,7 +42,6 @@ void runTestCases() {
         printf("Your Output: %s\n", result ? "true" : "false");
         printf("Test Case: %s\n", (result == expectedResults[i]) ? "✅ Passed" : "❌ Failed");
     }
-
     printf("\n-----------------------------\n");
 }
 
