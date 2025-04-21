@@ -11,7 +11,7 @@ class Solution:
                 return True
             current = current.next
         return False
-#asdfdssd
+#asdfdssdsdfsdsd
 def build_linked_list(arr):
     if not arr:
         return None
