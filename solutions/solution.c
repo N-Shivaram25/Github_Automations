@@ -7,7 +7,7 @@ struct Node {
     struct Node* next;
 };
 
-//dsgdsgsd
+//dsgdsgsds
 bool searchKey(int n, struct Node* head, int key) {
     // write your code here
 }
