@@ -1,19 +1,5 @@
 public class Test {
-
-    // Use the Node class from Solution.java
-    public static Node buildLinkedList(int[] values, int size) {
-        if (size == 0) return null;
-
-        Node head = new Node(values[0]);
-        Node current = head;
-        for (int i = 1; i < size; i++) {
-            current.next = new Node(values[i]);
-            current = current.next;
-        }
-        return head;
-    }
-
-    public static void runTestCases() {
+    public static void main(String[] args) {
         int[][] testInputs = {
             {1, 3, 5, 7, 9},
             {100000},
@@ -26,8 +12,8 @@ public class Test {
         int[] keysToSearch = {7, 99999, 10, 25, 100000};
         boolean[] expectedResults = {true, false, false, false, true};
 
-        for (int i = 0; i < 5; i++) {
-            Node head = buildLinkedList(testInputs[i], sizes[i]);
+        for (int i = 0; i < testInputs.length; i++) {
+            Solution.Node head = Solution.buildLinkedList(testInputs[i], sizes[i]);
             boolean result = Solution.searchKey(sizes[i], head, keysToSearch[i]);
 
             System.out.println("\n-----------------------------");
@@ -44,9 +30,5 @@ public class Test {
             System.out.println("Your Output: " + result);
             System.out.println("Test Case: " + (result == expectedResults[i] ? "✅ Passed" : "❌ Failed"));
         }
-    }
-
-    public static void main(String[] args) {
-        runTestCases();
     }
 }

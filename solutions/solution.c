@@ -29,7 +29,7 @@ struct Node* buildLinkedList(int arr[], int size) {
             tail = newNode;
         } else {
             tail->next = newNode;
-            tail = newNode;//kghkhkh
+            tail = newNode;//kghkhkh/sdsdfsd
         }
     }
     return head;
