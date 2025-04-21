@@ -1,6 +1,5 @@
-#==================Write the code here itself ======================#
-
-
+#==================Write the code here itself======================================================================================#
+#jhgjhg
 def build_linked_list(arr):
     if not arr:
         return None
@@ -10,5 +9,3 @@ def build_linked_list(arr):
         current.next = Node(val)
         current = current.next
     return head
-
-##
