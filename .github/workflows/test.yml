@@ -1,53 +1,111 @@
+name: Run Language-Specific Tests
+
+on:
+  push:
+    paths:
+      - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Detect Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+
+      - name: Determine Changed Solution File
+        id: detect-language
+        run: |
+          echo "Detecting changed solution files..."
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+
+          RUN_C=0
+          RUN_CPP=0
+          RUN_PYTHON=0
+          RUN_JAVA=0
+          COUNT=0
+
+          for FILE in $CHANGED_FILES; do
+            case "$FILE" in
+              solutions/*.c) RUN_C=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.cpp) RUN_CPP=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.py) RUN_PYTHON=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.java) RUN_JAVA=1; COUNT=$((COUNT+1)) ;;
+            esac
+          done
+
+          echo "RUN_C=$RUN_C" >> $GITHUB_ENV
+          echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
+          echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
+          echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
+          echo "SOLUTION_COUNT=$COUNT" >> $GITHUB_ENV
+
+      - name: Stop if multiple solution files changed
+        if: env.SOLUTION_COUNT != '1'
+        run: |
+          echo "❌ You cannot push multiple codes. Only one solution file can be changed at a time."
+          exit 1
+
+      - name: Install C Dependencies
+        if: env.RUN_C == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc
+
+      - name: Install C++ Dependencies
+        if: env.RUN_CPP == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+
+      - name: Install Java Dependencies
+        if: env.RUN_JAVA == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jdk
+
+      - name: Install Python Dependencies
+        if: env.RUN_PYTHON == '1'
+        run: |
+          python3 -m pip install --upgrade pip pytest
+
       - name: Compile and Run C Tests
         if: env.RUN_C == '1'
         run: |
-          set +e
+          set -e
           gcc -o tests/test tests/test.c solutions/solution.c
-          ./tests/test > /dev/null 2>&1
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "❌ Code is wrong"
-            exit 1
-          fi
-          echo "✅ Code passed all tests"
+          ./tests/test
 
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
-          set +e
+          set -e
           g++ -o tests/test tests/test.cpp solutions/solution.cpp
-          ./tests/test > /dev/null 2>&1
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "❌ Code is wrong"
-            exit 1
-          fi
-          echo "✅ Code passed all tests"
+          ./tests/test
 
       - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
         run: |
-          set +e
+          set -e
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          python3 tests/test.py > /dev/null 2>&1
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "❌ Code is wrong"
-            exit 1
-          fi
-          echo "✅ Code passed all tests"
+          python3 -m pytest -v tests/test.py | tee test_results.log
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
-          set +e
+          set -e
           mkdir -p out
           javac -d out solutions/Solution.java tests/Test.java
-          java -cp out Test > /dev/null 2>&1
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "❌ Code is wrong"
-            exit 1
-          fi
-          echo "✅ Code passed all tests"
+          java -cp out Test
