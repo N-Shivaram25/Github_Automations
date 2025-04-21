@@ -1,90 +1,113 @@
-name: Language-Specific Test Executor
+name: Run Linked List Search Tests
 
 on:
   push:
     paths:
       - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
 
 jobs:
-  detect-language:
-    runs-on: ubuntu-latest
-    outputs:
-      language: ${{ steps.set.outputs.language }}
-      multiple_changed: ${{ steps.set.outputs.multiple_changed }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Detect Changed File and Language
-        id: set
-        run: |
-          echo "Checking for modified solution files..."
-          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/')
-          echo "Changed files:"
-          echo "$changed_files"
-
-          file_count=$(echo "$changed_files" | wc -l)
-
-          if [ "$file_count" -gt 1 ]; then
-            echo "More than one solution file modified. Failing..."
-            echo "multiple_changed=true" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          echo "multiple_changed=false" >> $GITHUB_OUTPUT
-
-          file=$(echo "$changed_files" | head -n 1)
-
-          if [[ "$file" == *.py ]]; then
-            echo "language=python" >> $GITHUB_OUTPUT
-          elif [[ "$file" == *.c ]]; then
-            echo "language=c" >> $GITHUB_OUTPUT
-          elif [[ "$file" == *.cpp ]]; then
-            echo "language=cpp" >> $GITHUB_OUTPUT
-          elif [[ "$file" == *.java ]]; then
-            echo "language=java" >> $GITHUB_OUTPUT
-          else
-            echo "Unsupported file type: $file"
-            exit 1
-          fi
-
   run-tests:
-    needs: detect-language
-    if: needs.detect-language.outputs.multiple_changed != 'true'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Python Test
+      - name: Detect Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+
+      - name: Determine Changed Solution File
+        id: detect-language
+        run: |
+          echo "Detecting changed solution files..."
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+
+          RUN_C=0
+          RUN_CPP=0
+          RUN_PYTHON=0
+          RUN_JAVA=0
+          COUNT=0
+
+          for FILE in $CHANGED_FILES; do
+            case "$FILE" in
+              solutions/*.c) RUN_C=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.cpp) RUN_CPP=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.py) RUN_PYTHON=1; COUNT=$((COUNT+1)) ;;
+              solutions/*.java) RUN_JAVA=1; COUNT=$((COUNT+1)) ;;
+            esac
+          done
+
+          echo "RUN_C=$RUN_C" >> $GITHUB_ENV
+          echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
+          echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
+          echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
+          echo "SOLUTION_COUNT=$COUNT" >> $GITHUB_ENV
+
+      - name: Stop if multiple solution files changed
+        if: env.SOLUTION_COUNT != '1'
+        run: |
+          echo "❌ Skipping execution because $SOLUTION_COUNT solution files were changed. Only one is allowed."
+          exit 0
+
+      - name: Install C Dependencies
+        if: env.RUN_C == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc
+
+      - name: Install C++ Dependencies
+        if: env.RUN_CPP == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+
+      - name: Install Java Dependencies
+        if: env.RUN_JAVA == '1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jdk
+
+      - name: Install Python Dependencies
+        if: env.RUN_PYTHON == '1'
+        run: |
+          python3 -m pip install --upgrade pip pytest
+
+      - name: Compile and Run C Tests
+        if: env.RUN_C == '1'
+        run: |
+          gcc -o tests/test tests/test.c solutions/solution.c
+          ./tests/test
+
+      - name: Compile and Run C++ Tests
+        if: env.RUN_CPP == '1'
+        run: |
+          g++ -o tests/test tests/test.cpp solutions/solution.cpp
+          ./tests/test
+
       - name: Run Python Tests
-        if: needs.detect-language.outputs.language == 'python'
+        if: env.RUN_PYTHON == '1'
         run: |
-          echo "Running Python tests..."
-          python3 -m pip install --upgrade pip
-          python3 tests/test.py
+          export PYTHONUNBUFFERED=1
+          export PYTHONPATH=$PWD
+          python3 tests/test.py | tee test_results.log
 
-      # C Test
-      - name: Run C Tests
-        if: needs.detect-language.outputs.language == 'c'
+      - name: Compile and Run Java Tests
+        if: env.RUN_JAVA == '1'
         run: |
-          echo "Compiling and running C test..."
-          gcc solutions/solution.c tests/test.c -o c_test
-          ./c_test
+          javac -d . solutions/Solution.java tests/Test.java
+          java tests.Test
 
-      # C++ Test
-      - name: Run C++ Tests
-        if: needs.detect-language.outputs.language == 'cpp'
-        run: |
-          echo "Compiling and running C++ test..."
-          g++ solutions/solution.cpp tests/test.cpp -o cpp_test
-          ./cpp_test
-
-      # Java Test
-      - name: Run Java Tests
-        if: needs.detect-language.outputs.language == 'java'
-        run: |
-          echo "Compiling and running Java test..."
-          mkdir -p out
-          javac -d out solutions/Solution.java tests/Test.java
-          java -cp out Test
+      - name: Upload Test Results (Python only)
+        if: env.RUN_PYTHON == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test_results.log
