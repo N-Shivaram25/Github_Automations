@@ -2,11 +2,15 @@ name: Run Linked List Search Tests
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
   pull_request:
-    branches:
-      - main
+    paths:
+      - 'solutions/**'
+      - 'tests/**'
+      - '.github/workflows/**'
 
 jobs:
   run-tests:
@@ -54,37 +58,55 @@ jobs:
           exit 0
 
       - name: Install C Dependencies
-        if: env.RUN_C == '1' && env.SOLUTION_COUNT == '1'
+        if: env.RUN_C == '1'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc
 
       - name: Install C++ Dependencies
-        if: env.RUN_CPP == '1' && env.SOLUTION_COUNT == '1'
+        if: env.RUN_CPP == '1'
         run: |
           sudo apt-get update
           sudo apt-get install -y g++
 
       - name: Install Java Dependencies
-        if: env.RUN_JAVA == '1' && env.SOLUTION_COUNT == '1'
+        if: env.RUN_JAVA == '1'
         run: |
           sudo apt-get update
           sudo apt-get install -y default-jdk
 
       - name: Install Python Dependencies
-        if: env.RUN_PYTHON == '1' && env.SOLUTION_COUNT == '1'
+        if: env.RUN_PYTHON == '1'
         run: |
-          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade pip pytest
+
+      - name: Compile and Run C Tests
+        if: env.RUN_C == '1'
+        run: |
+          gcc -o tests/test tests/test.c solutions/solution.c
+          ./tests/test
+
+      - name: Compile and Run C++ Tests
+        if: env.RUN_CPP == '1'
+        run: |
+          g++ -o tests/test tests/test.cpp solutions/solution.cpp
+          ./tests/test
 
       - name: Run Python Tests
-        if: env.RUN_PYTHON == '1' && env.SOLUTION_COUNT == '1'
+        if: env.RUN_PYTHON == '1'
         run: |
-          echo "🚀 Running Python Test Cases..."
           export PYTHONUNBUFFERED=1
+          export PYTHONPATH=$PWD
           python3 tests/test.py | tee test_results.log
 
+      - name: Compile and Run Java Tests
+        if: env.RUN_JAVA == '1'
+        run: |
+          javac -d . solutions/Solution.java tests/Test.java
+          java tests.Test
+
       - name: Upload Test Results (Python only)
-        if: env.SOLUTION_COUNT == '1' && env.RUN_PYTHON == '1'
+        if: env.RUN_PYTHON == '1'
         uses: actions/upload-artifact@v4
         with:
           name: test-results
