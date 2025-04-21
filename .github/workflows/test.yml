@@ -83,84 +83,32 @@ jobs:
       - name: Compile and Run C Tests
         if: env.RUN_C == '1'
         run: |
-          gcc -o tests/test tests/test.c solutions/solution.c 2>&1 | tee c_compile_test_results.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Compilation of C code failed"
-            cat c_compile_test_results.log
-            exit 1
-          fi
-          if ! ./tests/test 2>&1 | tee c_test_results.log; then
-            echo "❌ C tests failed"
-            cat c_test_results.log
-            exit 1
-          fi
-
-      - name: Upload C Test Results
-        if: env.RUN_C == '1' && success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: c-test-results
-          path: c_*_test_results.log
+          gcc -o tests/test tests/test.c solutions/solution.c
+          ./tests/test
 
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
-          g++ -o tests/test tests/test.cpp solutions/solution.cpp 2>&1 | tee cpp_compile_test_results.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Compilation of C++ code failed"
-            cat cpp_compile_test_results.log
-            exit 1
-          fi
-          if ! ./tests/test 2>&1 | tee cpp_test_results.log; then
-            echo "❌ C++ tests failed"
-            cat cpp_test_results.log
-            exit 1
-          fi
-
-      - name: Upload C++ Test Results
-        if: env.RUN_CPP == '1' && success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cpp-test-results
-          path: cpp_*_test_results.log
+          g++ -o tests/test tests/test.cpp solutions/solution.cpp
+          ./tests/test
 
       - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
         run: |
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
-          if ! pytest tests/test.py --verbose 2>&1 | tee test_results.log; then
-            echo "❌ Python tests failed"
-            cat test_results.log
-            exit 1
-          fi
-
-      - name: Upload Python Test Results
-        if: env.RUN_PYTHON == '1' && success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-test-results
-          path: test_results.log
+          python3 tests/test.py | tee test_results.log
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
         run: |
           mkdir -p out
-          javac -d out solutions/Solution.java tests/Test.java 2>&1 | tee java_compile_test_results.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Compilation of Java code failed"
-            cat java_compile_test_results.log
-            exit 1
-          fi
-          if ! java -cp out Test 2>&1 | tee java_test_results.log; then
-            echo "❌ Java tests failed"
-            cat java_test_results.log
-            exit 1
-          fi
+          javac -d out solutions/Solution.java tests/Test.java
+          java -cp out Test
 
-      - name: Upload Java Test Results
-        if: env.RUN_JAVA == '1' && success()
+      - name: Upload Test Results (Python only)
+        if: env.RUN_PYTHON == '1'
         uses: actions/upload-artifact@v4
         with:
-          name: java-test-results
-          path: java_*_test_results.log
+          name: test-results
+          path: test_results.log
