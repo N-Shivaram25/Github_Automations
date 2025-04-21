@@ -85,12 +85,22 @@ jobs:
         run: |
           gcc -o tests/test tests/test.c solutions/solution.c
           ./tests/test
+          TEST_EXIT_CODE=$?
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+            echo "❌ C tests failed."
+            exit $TEST_EXIT_CODE
+          fi
 
       - name: Compile and Run C++ Tests
         if: env.RUN_CPP == '1'
         run: |
           g++ -o tests/test tests/test.cpp solutions/solution.cpp
           ./tests/test
+          TEST_EXIT_CODE=$?
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+            echo "❌ C++ tests failed."
+            exit $TEST_EXIT_CODE
+          fi
 
       - name: Run Python Tests
         if: env.RUN_PYTHON == '1'
@@ -98,6 +108,11 @@ jobs:
           export PYTHONUNBUFFERED=1
           export PYTHONPATH=$PWD
           python3 tests/test.py | tee test_results.log
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+            echo "❌ Python tests failed."
+            exit $TEST_EXIT_CODE
+          fi
 
       - name: Compile and Run Java Tests
         if: env.RUN_JAVA == '1'
@@ -105,6 +120,11 @@ jobs:
           mkdir -p out
           javac -d out solutions/Solution.java tests/Test.java
           java -cp out Test
+          TEST_EXIT_CODE=$?
+          if [ "$TEST_EXIT_CODE" -ne 0 ]; then
+            echo "❌ Java tests failed."
+            exit $TEST_EXIT_CODE
+          fi
 
       - name: Upload Test Results (Python only)
         if: env.RUN_PYTHON == '1'
