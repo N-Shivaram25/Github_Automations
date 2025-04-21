@@ -11,13 +11,13 @@ class Solution:
                 return True
             current = current.next
         return False
-#asdfdssdsdfsdsd
+
 def build_linked_list(arr):
     if not arr:
         return None
     head = Node(arr[0])
     current = head
-    for val in arr[1:]:#fvssvfvds
+    for val in arr[1:]:
         current.next = Node(val)
         current = current.next
     return head

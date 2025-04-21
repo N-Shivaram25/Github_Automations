@@ -1,5 +1,6 @@
 import sys
-sys.path.append("../solutions")  # Adding the Solutions folder to the path
+import os
+sys.path.append(os.path.abspath("solutions"))
 
 from solution import Node, Solution, build_linked_list
 
@@ -17,7 +18,7 @@ def run_test_cases():
 
     sol = Solution()
 
-    for i in range(5):
+    for i in range(len(test_inputs)):
         head = build_linked_list(test_inputs[i])
         result = sol.searchKey(sizes[i], head, keys_to_search[i])
 
