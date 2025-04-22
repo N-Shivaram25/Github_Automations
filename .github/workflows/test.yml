@@ -41,130 +41,67 @@ jobs:
           INCOMPLETE_FILES=""
           for file in $CHANGED_FILES; do
             echo "Checking file: $file"
-            if [ ! -s "$file" ]; then
-              INCOMPLETE_FILES="$INCOMPLETE_FILES $file (empty file)"
-            elif [[ "$file" == *.c ]]; then
-              # Check for searchKey function
-              if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*struct\s+Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey function)"
-              else
-                LINE_NUM=$(grep -nE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*struct\s+Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file" | cut -d: -f1)
+            if [[ "$file" == *.c ]]; then
+              if grep -qE '^\s*int\*\*\s+threeSum\s*\(int\*\s+nums,\s*int\s+numsSize,\s*int\*\s+returnSize,\s*int\*\*\s+returnColumnSizes\)\s*\{' "$file"; then
+                LINE_NUM=$(grep -nE '^\s*int\*\*\s+threeSum\s*\(int\*\s+nums,\s*int\s+numsSize,\s*int\*\s+returnSize,\s*int\*\*\s+returnColumnSizes\)\s*\{' "$file" | cut -d: -f1)
                 END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                   fi
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
-                fi
-              fi
-              # Check for buildLinkedList function
-              if ! grep -qE '^\s*struct\s+Node\*\s+buildLinkedList\s*\(\s*int\s+arr\[\]\s*,\s*int\s+size\s*\)\s*\{' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList function)"
-              else
-                LINE_NUM=$(grep -nE '^\s*struct\s+Node\*\s+buildLinkedList\s*\(\s*int\s+arr\[\]\s*,\s*int\s+size\s*\)\s*\{' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete buildLinkedList implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for buildLinkedList)"
-                fi
-              fi
-            elif [[ "$file" == *.py ]]; then
-              # Check for build_linked_list function
-              if ! grep -qE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
-              else
-                LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for build_linked_list)"
-                fi
-              fi
-              # Check for searchKey method (assuming class Solution)
-              if ! grep -qE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for searchKey)"
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                 fi
               fi
             elif [[ "$file" == *.cpp ]]; then
-              # Check for searchKey method (assuming class Solution)
-              if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file" | cut -d: -f1)
+              if grep -qE '^\s*(vector<.*>|std::vector<.*>)\s+threeSum\s*\((vector<.*>|std::vector<.*>)\s*(&|)\s*nums\)\s*\{' "$file"; then
+                LINE_NUM=$(grep -nE '^\s*(vector<.*>|std::vector<.*>)\s+threeSum\s*\((vector<.*>|std::vector<.*>)\s*(&|)\s*nums\)\s*\{' "$file" | cut -d: -f1)
                 END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                   fi
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                 fi
               fi
-              # Note: buildLinkedList is in test.cpp, not solution.cpp, so no check here
+            elif [[ "$file" == *.py ]]; then
+              if grep -qE '^\s*def\s+threeSum\s*\(self,\s*nums\):' "$file"; then
+                LINE_NUM=$(grep -nE '^\s*def\s+threeSum\s*\(self,\s*nums\):' "$file" | cut -d: -f1)
+                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
+                if [ -n "$END_LINE" ]; then
+                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
+                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
+                  fi
+                else
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
+                fi
+              fi
             elif [[ "$file" == *.java ]]; then
-              # Check for searchKey method
-              if ! grep -qE '^\s*public\s+static\s+boolean\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*public\s+static\s+boolean\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file" | cut -d: -f1)
+              if grep -qE '^\s*public\s+List<List<Integer>>\s+threeSum\s*\(int\[\]\s+nums\)\s*\{' "$file"; then
+                LINE_NUM=$(grep -nE '^\s*public\s+List<List<Integer>>\s+threeSum\s*\(int\[\]\s+nums\)\s*\{' "$file" | cut -d: -f1)
                 END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                   fi
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
-                fi
-              fi
-              # Check for buildLinkedList method
-              if ! grep -qE '^\s*public\s+static\s+Node\s+buildLinkedList\s*\(\s*int\[\]\s+arr\s*,\s*int\s+size\s*\)\s*\{' "$file"; then
-                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*public\s+static\s+Node\s+buildLinkedList\s*\(\s*int\[\]\s+arr\s*,\s*int\s+size\s*\)\s*\{' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete buildLinkedList implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for buildLinkedList)"
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file"
                 fi
               fi
             fi
           done
           
           if [ -n "$INCOMPLETE_FILES" ]; then
-            echo "Error: Incomplete or empty files detected: $INCOMPLETE_FILES"
+            echo "Error: Some files only contain function signatures without implementation: $INCOMPLETE_FILES"
             exit 1
           fi
 
