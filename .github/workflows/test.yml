@@ -84,15 +84,15 @@ jobs:
                 LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
                 TAIL_OUTPUT=$(tail -n +$LINE_NUM "$file")
                 echo "build_linked_list TAIL_OUTPUT: $TAIL_OUTPUT"
-                END_LINE=$(echo "$TAIL_OUTPUT" | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
+                END_LINE=$(echo "$TAIL_OUTPUT" | tail -n +2 | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
                   END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  END_LINE=$((END_LINE - 1))
+                  END_LINE=$((END_LINE + 1))  # Adjust to include up to the next def
                 fi
                 echo "build_linked_list END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 0 ]; then
-                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $END_LINE | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "build_linked_list IMPLEMENTATION: $IMPLEMENTATION"
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   echo "build_linked_list LINE_COUNT: $LINE_COUNT"
@@ -110,15 +110,15 @@ jobs:
                 LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
                 TAIL_OUTPUT=$(tail -n +$LINE_NUM "$file")
                 echo "searchKey TAIL_OUTPUT: $TAIL_OUTPUT"
-                END_LINE=$(echo "$TAIL_OUTPUT" | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
+                END_LINE=$(echo "$TAIL_OUTPUT" | tail -n +2 | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
                   END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  END_LINE=$((END_LINE - 1))
+                  END_LINE=$((END_LINE + 1))  # Adjust to include up to the next def
                 fi
                 echo "searchKey END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 0 ]; then
-                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $END_LINE | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "searchKey IMPLEMENTATION: $IMPLEMENTATION"
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   echo "searchKey LINE_COUNT: $LINE_COUNT"
