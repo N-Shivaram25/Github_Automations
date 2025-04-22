@@ -4,7 +4,7 @@
 
 struct Node {
     int data;
-    struct Node* next;//dsfsdfas
+    struct Node* next;//v
 };
 
 //dsgdsgsdsssssffs
