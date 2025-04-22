@@ -14,7 +14,7 @@ public class Solution {
         Node curr = head;
         for (int i = 1; i < n; i++) {
             curr.next = new Node(arr[i]);
-            curr = curr.next;
+            curr = curr.next;//vsfsd
         }
         return head;
     }
