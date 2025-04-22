@@ -86,7 +86,7 @@ jobs:
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 2 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                  if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
                     INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
                   fi
                 else
@@ -102,7 +102,7 @@ jobs:
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 2 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                  if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
                     INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
                   fi
                 else
