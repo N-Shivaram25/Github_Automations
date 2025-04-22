@@ -77,7 +77,6 @@ jobs:
             elif [[ "$file" == *.py ]]; then
               if grep -qE '^\s*def\s+threeSum\s*\(self,\s*nums\):' "$file"; then
                 LINE_NUM=$(grep -nE '^\s*def\s+threeSum\s*\(self,\s*nums\):' "$file" | cut -d: -f1)
-                # Find the end of the function by looking for unindented line or another def
                 END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
                 if [ -n "$END_LINE" ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
