@@ -92,9 +92,9 @@ jobs:
                 fi
                 echo "build_linked_list END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
-                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) 2>/dev/null || echo "Extraction failed")
                   echo "build_linked_list IMPLEMENTATION: $IMPLEMENTATION"
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
+                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*' | wc -l)
                   echo "build_linked_list LINE_COUNT: $LINE_COUNT"
                   if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
                     INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
@@ -120,9 +120,9 @@ jobs:
                 fi
                 echo "searchKey END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
-                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                  IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) 2>/dev/null || echo "Extraction failed")
                   echo "searchKey IMPLEMENTATION: $IMPLEMENTATION"
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
+                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*' | wc -l)
                   echo "searchKey LINE_COUNT: $LINE_COUNT"
                   if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
                     INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
