@@ -20,19 +20,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Ensure previous commit is available
+          fetch-depth: 2
 
       - name: Detect Changed Files
         id: changed-files
         run: |
           BEFORE_COMMIT="${{ github.event.before }}"
           if [ -z "$BEFORE_COMMIT" ] || ! git cat-file -e "$BEFORE_COMMIT"^{commit}; then
-            BEFORE_COMMIT=$(git rev-parse HEAD~1)  # Use last commit as fallback
+            BEFORE_COMMIT=$(git rev-parse HEAD~1)
           fi
-          
+
           CHANGED_FILES=$(git diff --name-only "$BEFORE_COMMIT" HEAD | grep '^solutions/' | sort -u)
           echo "Detected changed files: $CHANGED_FILES"
-          
+
           if [ -z "$CHANGED_FILES" ]; then
             echo "No file changes detected in solutions/ directory. Exiting..."
             exit 1
@@ -44,7 +44,6 @@ jobs:
             if [ ! -s "$file" ]; then
               INCOMPLETE_FILES="$INCOMPLETE_FILES $file (empty file)"
             elif [[ "$file" == *.c ]]; then
-              # Check for searchKey function
               if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*struct\s+Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey function)"
               else
@@ -60,7 +59,6 @@ jobs:
                   INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
                 fi
               fi
-              # Check for buildLinkedList function
               if ! grep -qE '^\s*struct\s+Node\*\s+buildLinkedList\s*\(\s*int\s+arr\[\]\s*,\s*int\s+size\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList function)"
               else
@@ -77,183 +75,89 @@ jobs:
                 fi
               fi
             elif [[ "$file" == *.py ]]; then
-              # Check for build_linked_list function
               if ! grep -qE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
-                  fi
+                TAIL_OUTPUT=$(tail -n +$LINE_NUM "$file")
+                END_LINE=$(echo "$TAIL_OUTPUT" | tail -n +2 | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
+                if [ -z "$END_LINE" ]; then
+                  END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for build_linked_list)"
+                  END_LINE=$((END_LINE + 1))
+                fi
+                IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) 2>/dev/null || echo "Extraction failed")
+                LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*(#.*$|"""|''''''|^$)' | grep -vE '^\s*$' | wc -l)
+                if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
                 fi
               fi
-              # Check for searchKey method
               if ! grep -qE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
-                  fi
+                TAIL_OUTPUT=$(tail -n +$LINE_NUM "$file")
+                END_LINE=$(echo "$TAIL_OUTPUT" | tail -n +2 | grep -nE '^\s*def' | head -n 1 | cut -d: -f1)
+                if [ -z "$END_LINE" ]; then
+                  END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for searchKey)"
+                  END_LINE=$((END_LINE + 1))
+                fi
+                IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) 2>/dev/null || echo "Extraction failed")
+                LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*(#.*$|"""|''''''|^$)' | grep -vE '^\s*$' | wc -l)
+                if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
                 fi
               fi
             elif [[ "$file" == *.cpp ]]; then
-              # Check for searchKey method
               if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
-                fi
               fi
             elif [[ "$file" == *.java ]]; then
-              # Check for searchKey method
               if ! grep -qE '^\s*public\s+static\s+boolean\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*public\s+static\s+boolean\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 2 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
-                fi
               fi
-              # Check for buildLinkedList method
               if ! grep -qE '^\s*public\s+static\s+Node\s+buildLinkedList\s*\(\s*int\[\]\s+arr\s*,\s*int\s+n\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList method)"
-              else
-                LINE_NUM=$(grep -nE '^\s*public\s+static\s+Node\s+buildLinkedList\s*\(\s*int\[\]\s+arr\s*,\s*int\s+n\s*\)\s*\{' "$file" | cut -d: -f1)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^\s*\}' | head -n 1 | cut -d: -f1)
-                if [ -n "$END_LINE" ]; then
-                  IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 2)) | grep -vE '^\s*(//|/\*.*\*/$|^$)' | grep -E '^\s*[^\s#].*')
-                  LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
-                  if [ "$LINE_COUNT" -le 2 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete buildLinkedList implementation)"
-                  fi
-                else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for buildLinkedList)"
-                fi
               fi
             fi
           done
-          
+
           if [ -n "$INCOMPLETE_FILES" ]; then
-            echo "Error: Incomplete or empty files detected: $INCOMPLETE_FILES"
+            echo "::error file=Check failed::The following files are incomplete: $INCOMPLETE_FILES"
             exit 1
           fi
 
-          echo "CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
-
-      - name: Determine Changed Solution File
-        id: detect-language
+      - name: Setup for Language
+        id: setup-lang
         run: |
-          echo "Detecting changed solution files..."
-          CHANGED_FILES="${{ env.CHANGED_FILES }}"
-
-          RUN_C=0
-          RUN_CPP=0
-          RUN_PYTHON=0
-          RUN_JAVA=0
-          COUNT=0
-
-          for FILE in $CHANGED_FILES; do
-            case "$FILE" in
-              solutions/*.c) RUN_C=1; COUNT=$((COUNT+1)) ;;
-              solutions/*.cpp) RUN_CPP=1; COUNT=$((COUNT+1)) ;;
-              solutions/*.py) RUN_PYTHON=1; COUNT=$((COUNT+1)) ;;
-              solutions/*.java) RUN_JAVA=1; COUNT=$((COUNT+1)) ;;
+          LANG_CHANGED=""
+          for file in $CHANGED_FILES; do
+            case "$file" in
+              *.c) LANG_CHANGED="c";;
+              *.cpp) LANG_CHANGED="cpp";;
+              *.py) LANG_CHANGED="python";;
+              *.java) LANG_CHANGED="java";;
             esac
           done
 
-          echo "RUN_C=$RUN_C" >> $GITHUB_ENV
-          echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
-          echo "RUN_PYTHON=$RUN_PYTHON" >> $GITHUB_ENV
-          echo "RUN_JAVA=$RUN_JAVA" >> $GITHUB_ENV
-          echo "SOLUTION_COUNT=$COUNT" >> $GITHUB_ENV
+          echo "Detected language: $LANG_CHANGED"
+          echo "lang=$LANG_CHANGED" >> $GITHUB_OUTPUT
 
-      - name: Stop if multiple solution files changed
-        if: env.SOLUTION_COUNT != '1'
-        run: |
-          echo "❌ You cannot push multiple codes. Only one solution file can be changed at a time."
-          exit 1
+      - name: Run C Tests
+        if: steps.setup-lang.outputs.lang == 'c'
+        run: gcc tests/test.c solutions/solution.c -o test && ./test
 
-      - name: Install C Dependencies
-        if: env.RUN_C == '1'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc
-
-      - name: Install C++ Dependencies
-        if: env.RUN_CPP == '1'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++
-
-      - name: Install Java Dependencies
-        if: env.RUN_JAVA == '1'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y default-jdk
-
-      - name: Install Python Dependencies
-        if: env.RUN_PYTHON == '1'
-        run: |
-          python3 -m pip install --upgrade pip pytest
-
-      - name: Compile and Run C Tests
-        if: env.RUN_C == '1'
-        run: |
-          gcc -o tests/test tests/test.c solutions/solution.c
-          ./tests/test
-
-      - name: Compile and Run C++ Tests
-        if: env.RUN_CPP == '1'
-        run: |
-          g++ -o tests/test tests/test.cpp solutions/solution.cpp
-          ./tests/test
+      - name: Run C++ Tests
+        if: steps.setup-lang.outputs.lang == 'cpp'
+        run: g++ tests/test.cpp solutions/solution.cpp -o test && ./test
 
       - name: Run Python Tests
-        if: env.RUN_PYTHON == '1'
-        run: |
-          export PYTHONUNBUFFERED=1
-          export PYTHONPATH=$PWD
-          python3 tests/test.py | tee test_results.log
+        if: steps.setup-lang.outputs.lang == 'python'
+        run: python3 tests/test.py
 
-      - name: Compile and Run Java Tests
-        if: env.RUN_JAVA == '1'
+      - name: Run Java Tests
+        if: steps.setup-lang.outputs.lang == 'java'
         run: |
-          mkdir -p out
-          javac -d out solutions/Solution.java tests/Test.java
-          java -cp out Test
-
-      - name: Upload Test Results (Python only)
-        if: env.RUN_PYTHON == '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test_results.log
+          javac tests/Test.java solutions/Solution.java
+          java -cp tests Test
