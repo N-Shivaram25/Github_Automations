@@ -12,7 +12,7 @@ class Solution {
               if (current->data == key) {
                   return true;//fdfgd  //dsfsdgsd
               }
-              current = current->next;//sfsfgg
+              current = current->next;//sfsfggss
           }
           return false;
       }  
