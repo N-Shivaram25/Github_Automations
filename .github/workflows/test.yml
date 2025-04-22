@@ -19,12 +19,14 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Ensure previous commit is available for Python validation
 
       - name: Detect Changed Files
         id: changed-files
         uses: tj-actions/changed-files@v44
 
-      - name: Determine Changed Solution File
+      - name: Determine Changed Solution File and Validate Python
         id: detect-language
         run: |
           echo "Detecting changed solution files..."
@@ -44,6 +46,59 @@ jobs:
               solutions/*.java) RUN_JAVA=1; COUNT=$((COUNT+1)) ;;
             esac
           done
+
+          # Validate Python files for completeness
+          if [ "$RUN_PYTHON" -eq 1 ]; then
+            BEFORE_COMMIT="${{ github.event.before }}"
+            if [ -z "$BEFORE_COMMIT" ] || ! git cat-file -e "$BEFORE_COMMIT"^{commit}; then
+              BEFORE_COMMIT=$(git rev-parse HEAD~1)
+            fi
+            CHANGED_PYTHON=$(echo "$CHANGED_FILES" | grep '\.py$')
+            INCOMPLETE_FILES=""
+            for file in $CHANGED_PYTHON; do
+              echo "Checking file: $file"
+              if [ ! -s "$file" ]; then
+                INCOMPLETE_FILES="$INCOMPLETE_FILES $file (empty file)"
+              else
+                # Check for build_linked_list function
+                if ! grep -qE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file"; then
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
+                else
+                  LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
+                  END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
+                  if [ -n "$END_LINE" ]; then
+                    IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                    LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
+                    if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                      INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
+                    fi
+                  else
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for build_linked_list)"
+                  fi
+                fi
+                # Check for searchKey method
+                if ! grep -qE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file"; then
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
+                else
+                  LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
+                  END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$|\s*[^ \t#])' | head -n 1 | cut -d: -f1)
+                  if [ -n "$END_LINE" ]; then
+                    IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
+                    LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
+                    if [ "$LINE_COUNT" -le 3 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
+                      INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
+                    fi
+                  else
+                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for searchKey)"
+                  fi
+                fi
+              fi
+            done
+            if [ -n "$INCOMPLETE_FILES" ]; then
+              echo "Error: Incomplete or empty files detected: $INCOMPLETE_FILES"
+              exit 1
+            fi
+          fi
 
           echo "RUN_C=$RUN_C" >> $GITHUB_ENV
           echo "RUN_CPP=$RUN_CPP" >> $GITHUB_ENV
