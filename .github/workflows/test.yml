@@ -38,11 +38,6 @@ jobs:
             exit 1
           fi
 
-          echo "CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
-
-      - name: Check for Empty Implementations
-        id: check-implementation
-        run: |
           INCOMPLETE_FILES=""
           for file in $CHANGED_FILES; do
             echo "Checking file: $file"
@@ -106,9 +101,11 @@ jobs:
           done
           
           if [ -n "$INCOMPLETE_FILES" ]; then
-            echo "Some files only contain function signatures without implementation: $INCOMPLETE_FILES"
+            echo "Error: Some files only contain function signatures without implementation: $INCOMPLETE_FILES"
             exit 1
           fi
+
+          echo "CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
 
       - name: Determine Changed Solution File
         id: detect-language
