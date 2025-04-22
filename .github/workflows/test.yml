@@ -88,10 +88,10 @@ jobs:
                 if [ -z "$END_LINE" ]; then
                   END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  END_LINE=$((END_LINE + 1))  # Adjust to include up to the next def
+                  END_LINE=$((END_LINE + 1))  # Include up to the next def
                 fi
                 echo "build_linked_list END_LINE: $END_LINE"
-                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 0 ]; then
+                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then  # Changed from > 0 to > 1 to skip the def line
                   IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "build_linked_list IMPLEMENTATION: $IMPLEMENTATION"
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
@@ -114,10 +114,10 @@ jobs:
                 if [ -z "$END_LINE" ]; then
                   END_LINE=$(wc -l <<< "$TAIL_OUTPUT")
                 else
-                  END_LINE=$((END_LINE + 1))  # Adjust to include up to the next def
+                  END_LINE=$((END_LINE + 1))  # Include up to the next def
                 fi
                 echo "searchKey END_LINE: $END_LINE"
-                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 0 ]; then
+                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then  # Changed from > 0 to > 1
                   IMPLEMENTATION=$(tail -n +2 <<< "$TAIL_OUTPUT" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "searchKey IMPLEMENTATION: $IMPLEMENTATION"
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
