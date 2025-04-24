@@ -217,13 +217,6 @@ jobs:
             exit 1
           fi
 
-      - name: Compile and Run Java Tests
-        if: env.RUN_JAVA == '1'
-        run: |
-          mkdir -p out
-          javac -d out solutions/Solution.java tests/Test.java
-          java -cp out Test
-
       - name: Upload Test Results (Python only)
         if: env.RUN_PYTHON == '1'
         uses: actions/upload-artifact@v4

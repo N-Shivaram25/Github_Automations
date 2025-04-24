@@ -1,9 +1,5 @@
-import sys
-import os
 import pytest
-sys.path.append(os.path.abspath("solutions"))
-
-from solution import Node, Solution, build_linked_list
+from solutions.solution import Solution, build_linked_list
 
 @pytest.mark.parametrize(
     "test_input, size, key, expected",
@@ -26,13 +22,16 @@ def test_search_key(test_input, size, key, expected):
     sol = Solution()
     head = build_linked_list(test_input)
     result = sol.searchKey(size, head, key)
-    print(f"\n-----------------------------")
+    print(f"\n{'='*50}")
+    print(f"Test Case: {pytest.current_test_id}")
     print(f"Linked List: {test_input}")
     print(f"Key to Search: {key}")
     print(f"Expected: {expected}")
     print(f"Your Output: {result}")
-    print("Test Case:", "✅ Passed" if result == expected else "❌ Failed")
+    if result == expected:
+        print(f"Test Result: ✅ Passed")
+    else:
+        print(f"\n*** ❌ TEST FAILED ❌ ***")
+        print(f"Test Result: ❌ Failed - Expected {expected}, but got {result}")
+    print(f"{'='*50}")
     assert result == expected, f"Test failed: expected {expected}, got {result}"
-
-if __name__ == "__main__":
-    pytest.main(["-v", "--tb=line", __file__])
