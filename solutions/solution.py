@@ -20,4 +20,4 @@ def build_linked_list(arr):
     for val in arr[1:]:
         current.next = Node(val)
         current = current.next
-    return head
+    return head    #ssss
