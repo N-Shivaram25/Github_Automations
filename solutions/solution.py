@@ -5,23 +5,13 @@ class Node:
 
 class Solution:
     def searchKey(self, n, head, key):
-        #===========================Write code Here============================================================#
-        return True
+        current = head
+        while current:
+            if current.data == key:
+                return True
+            current = current.next
+        return False
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
 def build_linked_list(arr):
     if not arr:
         return None
@@ -31,4 +21,3 @@ def build_linked_list(arr):
         current.next = Node(val)
         current = current.next
     return head
-
