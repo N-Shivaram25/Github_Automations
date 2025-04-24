@@ -5,7 +5,7 @@ class Node:
 
 class Solution:
     def searchKey(self, n, head, key):
-        
+        return False
 #jhgjhgdddssssssssssssxccswsssss
 def build_linked_list(arr):
     if not arr:
