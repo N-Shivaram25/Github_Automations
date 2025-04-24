@@ -5,8 +5,23 @@ class Node:
 
 class Solution:
     def searchKey(self, n, head, key):
-        return False
-#jhgjhgdddssssssssssssxccswsssss
+        #===========================Write code Here==========================================================#
+        return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def build_linked_list(arr):
     if not arr:
         return None
@@ -16,4 +31,4 @@ def build_linked_list(arr):
         current.next = Node(val)
         current = current.next
     return head
-#jfkjsdhfkjsxddsd
+
