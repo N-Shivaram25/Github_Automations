@@ -6,18 +6,20 @@ class Node:
 class Solution:
     def searchKey(self, n, head, key):
         current = head
-        while current:
+        count = 0
+        while current and count < n:
             if current.data == key:
                 return True
             current = current.next
+            count += 1
         return False
-#ddd
+
 def build_linked_list(arr):
     if not arr:
         return None
     head = Node(arr[0])
     current = head
-    for val in arr[1:]:
-        current.next = Node(val)
+    for i in range(1, len(arr)):
+        current.next = Node(arr[i])
         current = current.next
     return head
