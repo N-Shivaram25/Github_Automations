@@ -5,7 +5,12 @@ class Node:
 
 class Solution:
     def searchKey(self, n, head, key):
-       #write code here
+        current = head
+        while current:
+            if current.data == key:
+                return True
+            current = current.next
+        return False
 
 def build_linked_list(arr):
     if not arr:
