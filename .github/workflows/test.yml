@@ -49,8 +49,8 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
-                # Find the next unindented line (def, class, or end of file)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^[^ \t]' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line that is not a comment or empty
+                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|class|\s*[^ \t#][^ \t].*|$)' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
                   # If no unindented line, use the file's total line count
                   END_LINE=$(wc -l < "$file")
@@ -75,8 +75,8 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
-                # Find the next unindented line (def, class, or end of file)
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^[^ \t]' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line that is not a comment or empty
+                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|class|\s*[^ \t#][^ \t].*|$)' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
                   # If no unindented line, use the file's total line count
                   END_LINE=$(wc -l < "$file")
