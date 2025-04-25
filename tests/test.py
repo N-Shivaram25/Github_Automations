@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath("solutions"))
 
-from solution import Node, Solution, build_linked_list
+from solution1 import Node, Solution, build_linked_list
 
 def run_test_cases():
     test_inputs = [
