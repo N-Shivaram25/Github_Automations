@@ -49,20 +49,25 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
-                # Look for next function or file end
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$)' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line (def, class, or end of file)
+                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^[^ \t]' | head -n 1 | cut -d: -f1)
+                if [ -z "$END_LINE" ]; then
+                  # If no unindented line, use the file's total line count
+                  END_LINE=$(wc -l < "$file")
+                  END_LINE=$((END_LINE - LINE_NUM + 1))
+                fi
                 echo "build_linked_list LINE_NUM: $LINE_NUM, END_LINE: $END_LINE"
-                if [ -n "$END_LINE" ]; then
+                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "build_linked_list IMPLEMENTATION:"
                   echo "$IMPLEMENTATION"
                   LINE_COUNT=$(echo "$IMPLEMENTATION" | grep -vE '^\s*$' | wc -l)
                   echo "build_linked_list LINE_COUNT: $LINE_COUNT"
                   if [ "$LINE_COUNT" -le 1 ] || ! echo "$IMPLEMENTATION" | grep -qE '^\s*(if\s|for\s|while\s|[a-zA-Z_][a-zA-Z0-9_]*\s*=|[a-zA-Z_][a-zA-Z0-9_]*\s*\()(.*)'; then
-                    INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
+                    INcomplete_FILES="$INCOMPLETE_FILES $file (incomplete build_linked_list implementation)"
                   fi
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for build_linked_list)"
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no valid function body for build_linked_list)"
                 fi
               fi
               # Check for searchKey method
@@ -70,10 +75,15 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
-                # Look for next function or file end
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|\s*$)' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line (def, class, or end of file)
+                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^[^ \t]' | head -n 1 | cut -d: -f1)
+                if [ -z "$END_LINE" ]; then
+                  # If no unindented line, use the file's total line count
+                  END_LINE=$(wc -l < "$file")
+                  END_LINE=$((END_LINE - LINE_NUM + 1))
+                fi
                 echo "searchKey LINE_NUM: $LINE_NUM, END_LINE: $END_LINE"
-                if [ -n "$END_LINE" ]; then
+                if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
                   IMPLEMENTATION=$(tail -n +$((LINE_NUM + 1)) "$file" | head -n $((END_LINE - 1)) | grep -vE '^\s*(#|"""|''''''|^$)' | grep -E '^\s*[^\s#].*')
                   echo "searchKey IMPLEMENTATION:"
                   echo "$IMPLEMENTATION"
@@ -83,11 +93,10 @@ jobs:
                     INCOMPLETE_FILES="$INCOMPLETE_FILES $file (incomplete searchKey implementation)"
                   fi
                 else
-                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no function end for searchKey)"
+                  INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no valid function body for searchKey)"
                 fi
               fi
             elif [[ "$file" == *.c ]]; then
-              # Check for searchKey function
               if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*struct\s+Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey function)"
               else
@@ -103,7 +112,6 @@ jobs:
                   INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
                 fi
               fi
-              # Check for buildLinkedList function
               if ! grep -qE '^\s*struct\s+Node\*\s+buildLinkedList\s*\(\s*int\s+arr\[\]\s*,\s*int\s+size\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList function)"
               else
@@ -120,7 +128,6 @@ jobs:
                 fi
               fi
             elif [[ "$file" == *.cpp ]]; then
-              # Check for searchKey method
               if ! grep -qE '^\s*bool\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\*\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
@@ -137,7 +144,6 @@ jobs:
                 fi
               fi
             elif [[ "$file" == *.java ]]; then
-              # Check for searchKey method
               if ! grep -qE '^\s*public\s+static\s+boolean\s+searchKey\s*\(\s*int\s+n\s*,\s*Node\s+head\s*,\s*int\s+key\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
@@ -153,7 +159,6 @@ jobs:
                   INCOMPLETE_FILES="$INCOMPLETE_FILES $file (no closing brace for searchKey)"
                 fi
               fi
-              # Check for buildLinkedList method
               if ! grep -qE '^\s*public\s+static\s+Node\s+buildLinkedList\s*\(\s*int\[\]\s+arr\s*,\s*int\s+n\s*\)\s*\{' "$file"; then
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing buildLinkedList method)"
               else
