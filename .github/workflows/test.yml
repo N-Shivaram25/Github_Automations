@@ -44,7 +44,7 @@ jobs:
             if [ ! -s "$file" ]; then
               INCOMPLETE_FILES="$INCOMPLETE_FILES $file (empty file)"
             elif [[ "$file" == *.py ]]; then
-              # Dump the file content for debugging
+              # Dump the file content with line numbers for debugging
               echo "File content of $file:"
               cat -n "$file"
               # Check for build_linked_list function
@@ -52,12 +52,16 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing build_linked_list function)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+build_linked_list\s*\(\s*arr\s*\):' "$file" | cut -d: -f1)
-                # Find the next unindented line that starts a new definition or is the end of the file
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|class|\s*[^ \t#].+)' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line that starts with 'def' or 'class'
+                END_LINE=$(tail -n +$((LINE_NUM + 1)) "$file" | grep -nE '^[^ \t]*(def|class)\s' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
-                  # If no unindented line, use the file's total line count
+                  # If no subsequent def/class, use the remaining file length
                   END_LINE=$(tail -n +$LINE_NUM "$file" | wc -l)
-                  echo "No unindented line found after build_linked_list, using remaining file length: $END_LINE"
+                  echo "No subsequent def/class found after build_linked_list, using remaining file length: $END_LINE"
+                else
+                  # Adjust END_LINE to account for the tail offset
+                  END_LINE=$((END_LINE))
+                  echo "Found next def/class for build_linked_list, END_LINE: $END_LINE"
                 fi
                 echo "build_linked_list LINE_NUM: $LINE_NUM, END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
@@ -78,12 +82,16 @@ jobs:
                 INCOMPLETE_FILES="$INCOMPLETE_FILES $file (missing searchKey method)"
               else
                 LINE_NUM=$(grep -nE '^\s*def\s+searchKey\s*\(\s*self\s*,\s*n\s*,\s*head\s*,\s*key\s*\):' "$file" | cut -d: -f1)
-                # Find the next unindented line that starts a new definition or is the end of the file
-                END_LINE=$(tail -n +$LINE_NUM "$file" | grep -nE '^(def|class|\s*[^ \t#].+)' | head -n 1 | cut -d: -f1)
+                # Find the next unindented line that starts with 'def' or 'class'
+                END_LINE=$(tail -n +$((LINE_NUM + 1)) "$file" | grep -nE '^[^ \t]*(def|class)\s' | head -n 1 | cut -d: -f1)
                 if [ -z "$END_LINE" ]; then
-                  # If no unindented line, use the file's total line count
+                  # If no subsequent def/class, use the remaining file length
                   END_LINE=$(tail -n +$LINE_NUM "$file" | wc -l)
-                  echo "No unindented line found after searchKey, using remaining file length: $END_LINE"
+                  echo "No subsequent def/class found after searchKey, using remaining file length: $END_LINE"
+                else
+                  # Adjust END_LINE to account for the tail offset
+                  END_LINE=$((END_LINE))
+                  echo "Found next def/class for searchKey, END_LINE: $END_LINE"
                 fi
                 echo "searchKey LINE_NUM: $LINE_NUM, END_LINE: $END_LINE"
                 if [ -n "$END_LINE" ] && [ "$END_LINE" -gt 1 ]; then
