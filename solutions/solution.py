@@ -4,7 +4,8 @@ class Node:
         self.next = None
 
 class Solution:
-    
+    def searchKey(self, n, head, key):
+       #write code here
 
 def build_linked_list(arr):
     if not arr:
@@ -12,6 +13,6 @@ def build_linked_list(arr):
     head = Node(arr[0])
     current = head
     for val in arr[1:]:
-        current.next = Node(val)#dfsw
+        current.next = Node(val)
         current = current.next
-    return head    
+    return head
