@@ -13,7 +13,7 @@ class Solution:
             current = current.next
             count += 1
         return False
-
+#bhjghj
 def build_linked_list(arr):
     if not arr:
         return None
