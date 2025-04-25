@@ -16,7 +16,7 @@ class Solution:
 
 def build_linked_list(arr):
     if not arr:
-        return None
+        return None#hghjghjgj
     head = Node(arr[0])
     current = head
     for i in range(1, len(arr)):
