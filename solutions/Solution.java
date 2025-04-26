@@ -8,7 +8,7 @@ public class Solution {
         }
     }
 //ssdasacsdcas
-    public static Node buildLinkedLisst(int[] arr, int n) {
+    public static Node buildLinkedList(int[] arr, int n) {
         if (n == 0) return null;
         Node head = new Node(arr[0]);
         Node curr = head;
