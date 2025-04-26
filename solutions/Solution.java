@@ -6,7 +6,7 @@ public class Solution {
             data = d;
             next = null;
         }
-    }
+    }sa
 //ssdasacsdcssssssssss
     public static Node buildLinkedList(int[] arr, int n) {
         if (n == 0) return null;
