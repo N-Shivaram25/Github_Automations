@@ -7,7 +7,7 @@ public class Solution {
             next = null;
         }
     }
-//ssdasacsdcsssssssssssssssssssssssss
+//ssdasacsdcssssssssss
     public static Node buildLinkedList(int[] arr, int n) {
         if (n == 0) return null;
         Node head = new Node(arr[0]);
