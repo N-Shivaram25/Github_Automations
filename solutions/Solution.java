@@ -7,7 +7,7 @@ public class Solution {
             next = null;
         }
     }
-
+//sfdds
     public static Node buildLinkedList(int[] arr, int n) {
         if (n == 0) return null;
         Node head = new Node(arr[0]);
@@ -18,7 +18,7 @@ public class Solution {
         }
         return head;
     }
-//dsfsadfsdfasd
+
     public static boolean searchKey(int n, Node head, int key) {
         
     }
