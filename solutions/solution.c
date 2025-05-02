@@ -11,7 +11,7 @@ struct ListNode {
  * 
  * @param head pointer to the head of the list
  * @param val value to be removed
- * @return pointer to the new head of the modified list
+ * @return pointer to the new head of the modified lists
  */
 struct ListNode* removeElements(struct ListNode* head, int val) {
    
