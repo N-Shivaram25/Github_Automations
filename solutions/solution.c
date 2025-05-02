@@ -8,7 +8,7 @@ struct ListNode {
 };
 
 /**
- * Function to remove all elements from a linked list that have a specific value
+ * Function to remove all elements from a linked list that have a specific values
  * 
  * @param head pointer to the head of the list
  * @param val value to be removed
