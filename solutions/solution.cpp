@@ -9,9 +9,21 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Basic implementation of removeElements
+// Implement the main solution function
 ListNode* removeElements(ListNode* head, int val) {
-    // Create a dummy nodes
-   
+    // Your solution code here
+    ListNode dummy(0);
+    dummy.next = head;
+    ListNode* current = &dummy;
+    
+    while (current->next) {
+        if (current->next->val == val) {
+            ListNode* temp = current->next;
+            current->next = current->next->next;
+            delete temp;
+        } else {
+            current = current->next;
+        }
+    }
     return dummy.next;
 }
