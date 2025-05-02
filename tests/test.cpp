@@ -1,12 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include "../solutions/solution.cpp"  // Include solution.cpp directly
 using namespace std;
-
-extern ListNode* createList(const vector<int>& vals);
-extern vector<int> toVector(ListNode* head);
-extern void deleteList(ListNode* head);
-extern ListNode* removeElements(ListNode* head, int val);
 
 int main() {
     bool all_passed = true;

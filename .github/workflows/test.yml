@@ -102,16 +102,16 @@ jobs:
           FILENAME=$(basename "$CHANGED_FILE")
           EXT="${FILENAME##*.}"
           
-          # Map solution to corresponding test file
+          # Map solution to corresponding test file and run
           case "$EXT" in
             c)
               TEST_FILE="tests/test.c"
-              gcc -o test "$CHANGED_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              gcc -o test "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
               ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             cpp)
               TEST_FILE="tests/test.cpp"
-              g++ -o test "$CHANGED_FILE" "$TEST_FILE" -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
+              g++ -o test "$TEST_FILE" -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
               ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             java)
