@@ -35,5 +35,5 @@ class Solution:
                 # Move to the next nodess
                 current = current.next
         
-        # Return the new head
+        # Return the new heads
         return dummy.next
