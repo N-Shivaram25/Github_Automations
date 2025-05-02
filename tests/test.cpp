@@ -3,8 +3,43 @@
 #include <cassert>
 using namespace std;
 
-// Declare removeElements as extern since it's implemented in solution.cpp
+// Define the ListNode structure here so it's available in the test file
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode(int x) : val(x), next(nullptr) {}
+};
+
+// Declare the functions that will be imported from solution.cpp
 extern ListNode* removeElements(ListNode* head, int val);
+
+// Define utility functions in the test file since they're needed for testing
+ListNode* createList(const vector<int>& vals) {
+    ListNode dummy(0);
+    ListNode* tail = &dummy;
+    for (int v : vals) {
+        tail->next = new ListNode(v);
+        tail = tail->next;
+    }
+    return dummy.next;
+}
+
+vector<int> toVector(ListNode* head) {
+    vector<int> result;
+    while (head) {
+        result.push_back(head->val);
+        head = head->next;
+    }
+    return result;
+}
+
+void deleteList(ListNode* head) {
+    while (head) {
+        ListNode* temp = head;
+        head = head->next;
+        delete temp;
+    }
+}
 
 int main() {
     bool all_passed = true;

@@ -1,18 +1,21 @@
+#include <iostream>
 #include <vector>
 using namespace std;
 
+// Use the same struct definition as in test.cpp
 struct ListNode {
     int val;
     ListNode* next;
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Make the main function global (no class encapsulation)
+// Implement the main solution function
 ListNode* removeElements(ListNode* head, int val) {
+    // Your solution code here
     ListNode dummy(0);
     dummy.next = head;
     ListNode* current = &dummy;
-
+    
     while (current->next) {
         if (current->next->val == val) {
             ListNode* temp = current->next;
@@ -24,31 +27,3 @@ ListNode* removeElements(ListNode* head, int val) {
     }
     return dummy.next;
 }
-
-// Utility Functions
-ListNode* createList(const vector<int>& vals) {
-    ListNode dummy(0);
-    ListNode* tail = &dummy;
-    for (int v : vals) {
-        tail->next = new ListNode(v);
-        tail = tail->next;
-    }
-    return dummy.next;
-}
-
-vector<int> toVector(ListNode* head) {
-    vector<int> result;
-    while (head) {
-        result.push_back(head->val);
-        head = head->next;
-    }
-    return result;
-}
-
-void deleteList(ListNode* head) {
-    while (head) {
-        ListNode* temp = head;
-        head = head->next;
-        delete temp;
-    }
-}//ss
