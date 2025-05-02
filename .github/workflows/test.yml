@@ -139,6 +139,7 @@ jobs:
         run: |
           # Ensure solution.py can be imported by tests
           cp solutions/solution.py .
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           python tests/test.py
         continue-on-error: false
 
@@ -146,6 +147,7 @@ jobs:
       - name: Run C tests
         if: needs.check-single-file-change.outputs.language == 'c'
         run: |
+          # Simple compilation approach for C
           gcc -o test_program tests/test.c solutions/solution.c -lm
           ./test_program
         continue-on-error: false
@@ -154,7 +156,21 @@ jobs:
       - name: Run C++ tests
         if: needs.check-single-file-change.outputs.language == 'cpp'
         run: |
-          g++ -std=c++17 -o test_program tests/test.cpp solutions/solution.cpp
+          # Simple approach - create a combined file for testing
+          COMBINED_FILE="combined_test.cpp"
+          echo "#include <iostream>" > $COMBINED_FILE
+          echo "#include <vector>" >> $COMBINED_FILE
+          echo "#include <cassert>" >> $COMBINED_FILE
+          echo "using namespace std;" >> $COMBINED_FILE
+          
+          # Add solution.cpp content (excluding any includes)
+          grep -v "#include" solutions/solution.cpp >> $COMBINED_FILE
+          
+          # Add test.cpp content (excluding includes and using statements)
+          grep -v -E "^#include|^using" tests/test.cpp >> $COMBINED_FILE
+          
+          # Compile and run
+          g++ -std=c++17 -o test_program $COMBINED_FILE
           ./test_program
         continue-on-error: false
 

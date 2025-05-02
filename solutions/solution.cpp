@@ -7,7 +7,7 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Define removeElements as a standalone functionss
+// Make the main function global (no class encapsulation)
 ListNode* removeElements(ListNode* head, int val) {
     ListNode dummy(0);
     dummy.next = head;
