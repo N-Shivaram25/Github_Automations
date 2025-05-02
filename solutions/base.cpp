@@ -4,7 +4,7 @@
 ListNode* removeElements(ListNode* head, int val) {
     // TODO: Write your code here
     
-    // Placeholder return (remove this when implementing your solution)
+    // Placeholder return (remove this when implementing your solution)s
     return head;
 }
 
