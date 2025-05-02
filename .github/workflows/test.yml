@@ -82,16 +82,29 @@ jobs:
           
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
-            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE" || grep -q "def.*:" "$FILE" | grep -v -q "{"; then
+            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
+            fi
+            
+            # Separate check for function definitions with no implementation
+            if grep -q "def.*:" "$FILE" && ! grep -q "{" "$FILE"; then
+              # This is actually normal for Python - no need to check for braces
+              # Python uses indentation, not braces
+              :
             fi
           fi
           
           # If the file is a C/C++ file, check for function stubs
           if [[ "$FILE" == *.cpp ]] || [[ "$FILE" == *.c ]]; then
-            if grep -q "// TODO" "$FILE" || grep -q "return.*;" "$FILE" | grep -v -q "{"; then
+            if grep -q "// TODO" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for empty function bodies
+            if grep -q "{[[:space:]]*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains empty function bodies)."
               exit 1
             fi
           fi
@@ -100,6 +113,12 @@ jobs:
           if [[ "$FILE" == *.java ]]; then
             if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for empty method bodies
+            if grep -q "{[[:space:]]*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
               exit 1
             fi
           fi
@@ -137,10 +156,16 @@ jobs:
       - name: Run Python tests
         if: needs.check-single-file-change.outputs.language == 'python'
         run: |
-          # Ensure solution.py can be imported by tests
-          cp solutions/solution.py .
+          # Extract directory and filename
+          FILEPATH="${{ needs.check-single-file-change.outputs.changed_file }}"
+          DIRECTORY=$(dirname "$FILEPATH")
+          
+          # Make sure the solutions directory is in Python path
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          python tests/test.py
+          
+          # Run the tests
+          cd tests
+          python -m unittest test.py
         continue-on-error: false
 
       # Test execution for C

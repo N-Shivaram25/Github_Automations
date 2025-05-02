@@ -29,7 +29,7 @@ class Solution:
         while current.next:
             # If the next node has the target value
             if current.next.val == val:
-                # Bypass the node to be removed (Python will handle memory management)
+                # Bypass the node to be removed (Python will handle memory management)s
                 current.next = current.next.next
             else:
                 # Move to the next node
