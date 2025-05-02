@@ -118,24 +118,27 @@ jobs:
           
           # If the file is a Java file, check for method stubs
           if [[ "$FILE" == *.java ]]; then
-            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
+            if grep -q -v "^[[:space:]]*[*]" "$FILE" | grep -q "// TODO" "$FILE" || grep -q -v "^[[:space:]]*[*]" "$FILE" | grep -q "throw new UnsupportedOperationException" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
             
-            # Check for empty method bodies, excluding constructor definitions and empty blocks inside methods
-            # This will look for pattern of "methodName() {}" or "methodName() { }" but ignoring constructors
-            # and inner code blocks that might be empty
-            if grep -q -E "[a-zA-Z0-9_]+\([^)]*\)[[:space:]]*{[[:space:]]*}[[:space:]]*$" "$FILE"; then
-              # Check if this is a real method and not a constructor
-              METHOD_WITH_EMPTY_BODY=$(grep -E "[a-zA-Z0-9_]+\([^)]*\)[[:space:]]*{[[:space:]]*}[[:space:]]*$" "$FILE")
-              # We specifically want to filter out empty constructors like "ListNode() {}"
-              if ! echo "$METHOD_WITH_EMPTY_BODY" | grep -q -E "^[[:space:]]*[A-Z][a-zA-Z0-9_]*\([^)]*\)[[:space:]]*{[[:space:]]*}"; then
-                echo "::error::Solution appears to be incomplete (contains empty method bodies)."
-                echo "Empty method found: $METHOD_WITH_EMPTY_BODY"
-                exit 1
-              fi
+            # Create a temporary file with comments removed for checking empty methods
+            TEMP_FILE=$(mktemp)
+            # Remove all comment blocks and commented lines
+            sed '/\/\*/,/\*\//d' "$FILE" | sed '/^\s*\/\//d' | sed '/^\s*\*\//d' | sed '/^\s*\*/d' > "$TEMP_FILE"
+            
+            # Check if any actual method implementations have empty bodies
+            # Look for patterns like "public void method() {}" but not constructors or interface methods
+            EMPTY_METHODS=$(grep -E "[a-zA-Z0-9_]+\([^)]*\)[[:space:]]*{[[:space:]]*}[[:space:]]*$" "$TEMP_FILE" | grep -v -E "^[[:space:]]*([A-Z][a-zA-Z0-9_]*\([^)]*\)|interface)")
+            if [[ ! -z "$EMPTY_METHODS" ]]; then
+              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
+              echo "Empty method found: $EMPTY_METHODS"
+              exit 1
             fi
+            
+            # Clean up
+            rm "$TEMP_FILE"
           fi
 
       # Setup for Python
