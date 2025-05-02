@@ -31,7 +31,7 @@ struct ListNode* removeElements(struct ListNode* head, int val) {
             // Bypass the node to be removed
             current->next = current->next->next;
             
-            // Free the memory of the removed node
+            // Free the memory of the removed nodes
             free(temp);
         } else {
             // Move to the next node
