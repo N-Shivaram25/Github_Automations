@@ -9,14 +9,20 @@ on:
       - 'solutions/**'
 
 jobs:
-  test-solution:
+  check-single-file-change:
     runs-on: ubuntu-latest
+    outputs:
+      changed_file: ${{ steps.check-files.outputs.changed_file }}
+      language: ${{ steps.detect-language.outputs.language }}
+      file_basename: ${{ steps.parse-filename.outputs.basename }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Identify changed solution files
-        id: changed-files
+      - name: Check for single file change
+        id: check-files
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -E "^solutions/")
@@ -27,145 +33,200 @@ jobs:
           echo "Changed solution files:"
           echo "$CHANGED_FILES"
           
-          # Count changed files
+          # Count how many solution files were changed
           CHANGED_COUNT=$(echo "$CHANGED_FILES" | grep -v "^$" | wc -l)
           
           if [ "$CHANGED_COUNT" -gt 1 ]; then
-            echo "::error::Multiple solution files were changed. Please modify only one file at a time."
+            echo "::error::Multiple solution files were changed in this commit. Please modify only one solution file at a time."
             exit 1
           elif [ "$CHANGED_COUNT" -eq 0 ]; then
             echo "No solution files were changed."
-            echo "changed=false" >> $GITHUB_OUTPUT
+            exit 0
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "file=$CHANGED_FILES" >> $GITHUB_OUTPUT
+            echo "changed_file=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Detect programming language
+        id: detect-language
+        if: steps.check-files.outputs.changed_file != ''
+        run: |
+          FILE="${{ steps.check-files.outputs.changed_file }}"
+          if [[ "$FILE" == *.py ]]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.c ]]; then
+            echo "language=c" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.cpp ]]; then
+            echo "language=cpp" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.java ]]; then
+            echo "language=java" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Unsupported file type: $FILE"
+            exit 1
+          fi
+      
+      - name: Parse filename
+        id: parse-filename
+        if: steps.check-files.outputs.changed_file != ''
+        run: |
+          FILE="${{ steps.check-files.outputs.changed_file }}"
+          BASENAME=$(basename "$FILE" | cut -d. -f1)
+          echo "basename=$BASENAME" >> $GITHUB_OUTPUT
+
+  run-tests:
+    needs: check-single-file-change
+    if: needs.check-single-file-change.outputs.changed_file != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check solution for empty or incomplete code
+        run: |
+          FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          # Check if file is empty or contains only comments/whitespace
+          if [ ! -s "$FILE" ] || [[ $(grep -v -E "^\s*(//|#|/\*|\*|$)" "$FILE" | wc -l) -eq 0 ]]; then
+            echo "::error::Solution file is empty or contains only comments/whitespace."
+            exit 1
+          fi
+          
+          # If the file is a Python file, check for common patterns that indicate incomplete code
+          if [[ "$FILE" == *.py ]]; then
+            # Modified check to only flag when 'pass' or '# TODO' appears as standalone patterns
+            # This avoids false positives in documentation strings or comments
+            if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
             
-            # Determine language
-            if [[ "$CHANGED_FILES" == *.py ]]; then
-              echo "language=python" >> $GITHUB_OUTPUT
-            elif [[ "$CHANGED_FILES" == *.c ]]; then
-              echo "language=c" >> $GITHUB_OUTPUT
-            elif [[ "$CHANGED_FILES" == *.cpp ]]; then
-              echo "language=cpp" >> $GITHUB_OUTPUT
-            elif [[ "$CHANGED_FILES" == *.java ]]; then
-              echo "language=java" >> $GITHUB_OUTPUT
-            else
-              echo "::error::Unsupported file type"
+            # Print debug info to help diagnose issues
+            echo "Python solution content check passed"
+          fi
+          
+          # If the file is a C/C++ file, check for function stubs
+          if [[ "$FILE" == *.cpp ]] || [[ "$FILE" == *.c ]]; then
+            if grep -q "// TODO" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for empty function bodies
+            if grep -q "{[[:space:]]*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains empty function bodies)."
+              exit 1
+            fi
+          fi
+          
+          # If the file is a Java file, check for method stubs
+          if [[ "$FILE" == *.java ]]; then
+            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for empty method bodies
+            if grep -q "{[[:space:]]*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
               exit 1
             fi
           fi
 
-      - name: Check for incomplete Python solution
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'python'
-        run: |
-          FILE="${{ steps.changed-files.outputs.file }}"
-          
-          echo "Checking Python solution: $FILE"
-          
-          # Check for empty file
-          if [ ! -s "$FILE" ]; then
-            echo "::error::Solution file is empty."
-            exit 1
-          fi
-          
-          # Check for standalone pass statements (not part of other words)
-          if grep -E '^\s*pass\s*$' "$FILE"; then
-            echo "::error::Solution contains empty pass statements."
-            exit 1
-          fi
-          
-          # Check for TODO comments
-          if grep -E '^\s*#\s*TODO' "$FILE"; then
-            echo "::error::Solution contains TODO comments."
-            exit 1
-          fi
-          
-          echo "Solution code check passed."
-
+      # Setup for Python
       - name: Set up Python
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'python'
+        if: needs.check-single-file-change.outputs.language == 'python'
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
       - name: Install Python dependencies
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'python'
+        if: needs.check-single-file-change.outputs.language == 'python'
         run: |
           python -m pip install --upgrade pip
           pip install pytest numpy pandas
+          # Add more dependencies as needed for specific problems
 
-      - name: Run Python tests
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'python'
-        run: |
-          echo "Testing Python solution: ${{ steps.changed-files.outputs.file }}"
-          
-          # Create the simplest possible test runner
-          cat > run_tests.py << EOF
-import sys
-import os
-import unittest
-
-# Add root to path
-sys.path.insert(0, os.path.abspath('.'))
-
-# Try imports
-print("Python path:", sys.path)
-
-# Copy solution.py to root (simplest solution)
-with open('${{ steps.changed-files.outputs.file }}', 'r') as src:
-    with open('solution.py', 'w') as dst:
-        dst.write(src.read())
-
-print("Solution copied to root directory")
-
-# Import test module
-sys.path.append('tests')
-from test import TestRemoveElements
-
-if __name__ == '__main__':
-    print("Running tests...")
-    unittest.main(module='test', argv=['first-arg-is-ignored'], exit=False)
-EOF
-          
-          # Copy the test file to root directory as well for simpler imports
-          cp tests/test.py .
-          
-          # Run the test runner
-          python run_tests.py
-
+      # Setup for C/C++
       - name: Set up C/C++ environment
-        if: steps.changed-files.outputs.changed == 'true' && (steps.changed-files.outputs.language == 'c' || steps.changed-files.outputs.language == 'cpp')
+        if: needs.check-single-file-change.outputs.language == 'c' || needs.check-single-file-change.outputs.language == 'cpp'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake
 
-      - name: Run C tests
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'c'
-        run: |
-          echo "Testing C solution: ${{ steps.changed-files.outputs.file }}"
-          gcc -o test_program tests/test.c ${{ steps.changed-files.outputs.file }} -lm
-          ./test_program
-
-      - name: Run C++ tests
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'cpp'
-        run: |
-          echo "Testing C++ solution: ${{ steps.changed-files.outputs.file }}"
-          g++ -std=c++17 -c ${{ steps.changed-files.outputs.file }} -o solution.o
-          g++ -std=c++17 -c tests/test.cpp -o test.o
-          g++ -std=c++17 solution.o test.o -o test_program
-          ./test_program
-
+      # Setup for Java
       - name: Set up JDK
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'java'
+        if: needs.check-single-file-change.outputs.language == 'java'
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Run Java tests
-        if: steps.changed-files.outputs.changed == 'true' && steps.changed-files.outputs.language == 'java'
+      # Test execution for Python
+      - name: Run Python tests
+        if: needs.check-single-file-change.outputs.language == 'python'
         run: |
-          echo "Testing Java solution: ${{ steps.changed-files.outputs.file }}"
+          echo "Running Python tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Debug: Print file contents 
+          echo "Solution file content:"
+          cat ${{ needs.check-single-file-change.outputs.changed_file }}
+          
+          # Make sure the solutions directory is in Python path
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          
+          # Debug: Print directory structure
+          echo "Directory structure:"
+          ls -la
+          ls -la solutions/
+          ls -la tests/
+          
+          # Run the tests with detailed output
+          cd tests
+          python -m unittest -v test.py
+        continue-on-error: false
+
+      # Test execution for C
+      - name: Run C tests
+        if: needs.check-single-file-change.outputs.language == 'c'
+        run: |
+          echo "Running C tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Compile the test file with the solution
+          gcc -o test_program tests/test.c ${{ needs.check-single-file-change.outputs.changed_file }} -lm
+          
+          # Run the tests
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for C++
+      - name: Run C++ tests
+        if: needs.check-single-file-change.outputs.language == 'cpp'
+        run: |
+          echo "Running C++ tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Compile the solution and test files
+          g++ -std=c++17 -c ${{ needs.check-single-file-change.outputs.changed_file }} -o solution.o
+          g++ -std=c++17 -c tests/test.cpp -o test.o
+          g++ -std=c++17 solution.o test.o -o test_program
+          
+          # Run the tests
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for Java
+      - name: Run Java tests
+        if: needs.check-single-file-change.outputs.language == 'java'
+        run: |
+          echo "Running Java tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Create build directory
           mkdir -p build
-          javac -d build ${{ steps.changed-files.outputs.file }} tests/Test.java
+          
+          # Compile Java files
+          javac -d build ${{ needs.check-single-file-change.outputs.changed_file }} tests/Test.java
+          
+          # Run the tests
           cd build && java Test
+        continue-on-error: false
+
+      - name: Test Results Summary
+        run: |
+          echo "All tests have passed successfully for ${{ needs.check-single-file-change.outputs.changed_file }}!"
