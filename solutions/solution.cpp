@@ -7,25 +7,23 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-class Solution {
-public:
-    ListNode* removeElements(ListNode* head, int val) {
-        ListNode dummy(0);
-        dummy.next = head;
-        ListNode* current = &dummy;
+// Define removeElements as a standalone function
+ListNode* removeElements(ListNode* head, int val) {
+    ListNode dummy(0);
+    dummy.next = head;
+    ListNode* current = &dummy;
 
-        while (current->next) {
-            if (current->next->val == val) {
-                ListNode* temp = current->next;
-                current->next = current->next->next;
-                delete temp;
-            } else {
-                current = current->next;
-            }
+    while (current->next) {
+        if (current->next->val == val) {
+            ListNode* temp = current->next;
+            current->next = current->next->next;
+            delete temp;
+        } else {
+            current = current->next;
         }
-        return dummy.next;
     }
-};
+    return dummy.next;
+}
 
 // Utility Functions
 ListNode* createList(const vector<int>& vals) {
@@ -37,7 +35,7 @@ ListNode* createList(const vector<int>& vals) {
     }
     return dummy.next;
 }
-//jfgjs
+
 vector<int> toVector(ListNode* head) {
     vector<int> result;
     while (head) {
