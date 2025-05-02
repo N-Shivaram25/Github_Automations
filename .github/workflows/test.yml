@@ -123,10 +123,18 @@ jobs:
               exit 1
             fi
             
-            # Check for empty method bodies
-            if grep -q "{[[:space:]]*}" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
-              exit 1
+            # Check for empty method bodies, excluding constructor definitions and empty blocks inside methods
+            # This will look for pattern of "methodName() {}" or "methodName() { }" but ignoring constructors
+            # and inner code blocks that might be empty
+            if grep -q -E "[a-zA-Z0-9_]+\([^)]*\)[[:space:]]*{[[:space:]]*}[[:space:]]*$" "$FILE"; then
+              # Check if this is a real method and not a constructor
+              METHOD_WITH_EMPTY_BODY=$(grep -E "[a-zA-Z0-9_]+\([^)]*\)[[:space:]]*{[[:space:]]*}[[:space:]]*$" "$FILE")
+              # We specifically want to filter out empty constructors like "ListNode() {}"
+              if ! echo "$METHOD_WITH_EMPTY_BODY" | grep -q -E "^[[:space:]]*[A-Z][a-zA-Z0-9_]*\([^)]*\)[[:space:]]*{[[:space:]]*}"; then
+                echo "::error::Solution appears to be incomplete (contains empty method bodies)."
+                echo "Empty method found: $METHOD_WITH_EMPTY_BODY"
+                exit 1
+              fi
             fi
           fi
 

@@ -14,7 +14,7 @@ public class Solution {
      * 
      * @param head the head of the linked lists
      * @param val the value to be removed
-     * @return the head of the modified linked list
+     * @return the head of the modified linked lists
      */
     public ListNode removeElements(ListNode head, int val) {
         // Create a dummy node to handle edge cases (like removing the head)
