@@ -7,7 +7,7 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Define removeElements as a standalone functions
+// Define removeElements as a standalone functionss
 ListNode* removeElements(ListNode* head, int val) {
     ListNode dummy(0);
     dummy.next = head;
