@@ -14,6 +14,7 @@ jobs:
     outputs:
       changed_file: ${{ steps.check-files.outputs.changed_file }}
       language: ${{ steps.detect-language.outputs.language }}
+      file_basename: ${{ steps.parse-filename.outputs.basename }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -62,6 +63,14 @@ jobs:
             echo "::error::Unsupported file type: $FILE"
             exit 1
           fi
+      
+      - name: Parse filename
+        id: parse-filename
+        if: steps.check-files.outputs.changed_file != ''
+        run: |
+          FILE="${{ steps.check-files.outputs.changed_file }}"
+          BASENAME=$(basename "$FILE" | cut -d. -f1)
+          echo "basename=$BASENAME" >> $GITHUB_OUTPUT
 
   run-tests:
     needs: check-single-file-change
@@ -74,36 +83,16 @@ jobs:
       - name: Check solution for empty or incomplete code
         run: |
           FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
-          echo "Checking file: $FILE"
-          
-          # Check if file is empty
-          if [ ! -s "$FILE" ]; then
-            echo "::error::Solution file is empty."
+          # Check if file is empty or contains only comments/whitespace
+          if [ ! -s "$FILE" ] || [[ $(grep -v -E "^\s*(//|#|/\*|\*|$)" "$FILE" | wc -l) -eq 0 ]]; then
+            echo "::error::Solution file is empty or contains only comments/whitespace."
             exit 1
           fi
-          
-          # Check if file contains only comments/whitespace
-          CODE_LINES=$(grep -v -E "^\s*(#|$)" "$FILE" | wc -l)
-          if [ "$CODE_LINES" -eq 0 ]; then
-            echo "::error::Solution file contains only comments/whitespace."
-            exit 1
-          fi
-          
-          # Debug output to see file contents
-          echo "File contents preview (first 10 lines):"
-          head -n 10 "$FILE"
           
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
-            # Only look for standalone 'pass' statements (common placeholder)
-            if grep -q -E "(^|\s+)pass(\s+|$)" "$FILE"; then
-              echo "::error::Solution contains standalone 'pass' keyword, indicating placeholder code."
-              exit 1
-            fi
-            
-            # Look for TODO comments
-            if grep -q -E "#\s*TODO" "$FILE"; then
-              echo "::error::Solution contains TODO comments, indicating incomplete code."
+            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
           fi
@@ -116,7 +105,7 @@ jobs:
             fi
             
             # Check for empty function bodies
-            if grep -q -E "{[ \t\r\n]*}" "$FILE"; then
+            if grep -q "{[[:space:]]*}" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains empty function bodies)."
               exit 1
             fi
@@ -128,9 +117,13 @@ jobs:
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
+            
+            # Check for empty method bodies
+            if grep -q "{[[:space:]]*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
+              exit 1
+            fi
           fi
-          
-          echo "Solution check passed successfully."
 
       # Setup for Python
       - name: Set up Python
@@ -165,31 +158,26 @@ jobs:
       - name: Run Python tests
         if: needs.check-single-file-change.outputs.language == 'python'
         run: |
-          # Ensure the solution directory is in Python path
+          echo "Running Python tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Make sure the solutions directory is in Python path
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           
-          # Print directory structure for debugging
-          echo "Directory structure:"
-          ls -la
-          echo "Solutions directory:"
-          ls -la solutions/
-          echo "Tests directory:"
-          ls -la tests/
-          
-          # Copy the solution to the root directory (if the test expects it there)
-          SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
-          cp "$SOLUTION_FILE" "$(basename $SOLUTION_FILE)"
-          
-          # Run the tests
-          python -m unittest discover tests
+          # Run the tests with detailed output
+          cd tests
+          python -m unittest -v test.py
         continue-on-error: false
 
       # Test execution for C
       - name: Run C tests
         if: needs.check-single-file-change.outputs.language == 'c'
         run: |
-          # Simple compilation approach for C
-          gcc -o test_program tests/test.c solutions/solution.c -lm
+          echo "Running C tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Compile the test file with the solution
+          gcc -o test_program tests/test.c ${{ needs.check-single-file-change.outputs.changed_file }} -lm
+          
+          # Run the tests
           ./test_program
         continue-on-error: false
 
@@ -197,10 +185,14 @@ jobs:
       - name: Run C++ tests
         if: needs.check-single-file-change.outputs.language == 'cpp'
         run: |
-          # Approach 1: Compile solution.cpp to object file and link with test.cpp
-          g++ -std=c++17 -c solutions/solution.cpp -o solution.o
+          echo "Running C++ tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Compile the solution and test files
+          g++ -std=c++17 -c ${{ needs.check-single-file-change.outputs.changed_file }} -o solution.o
           g++ -std=c++17 -c tests/test.cpp -o test.o
           g++ -std=c++17 solution.o test.o -o test_program
+          
+          # Run the tests
           ./test_program
         continue-on-error: false
 
@@ -208,8 +200,15 @@ jobs:
       - name: Run Java tests
         if: needs.check-single-file-change.outputs.language == 'java'
         run: |
+          echo "Running Java tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
+          
+          # Create build directory
           mkdir -p build
-          javac -d build solutions/Solution.java tests/Test.java
+          
+          # Compile Java files
+          javac -d build ${{ needs.check-single-file-change.outputs.changed_file }} tests/Test.java
+          
+          # Run the tests
           cd build && java Test
         continue-on-error: false
 
