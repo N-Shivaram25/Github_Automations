@@ -156,21 +156,10 @@ jobs:
       - name: Run C++ tests
         if: needs.check-single-file-change.outputs.language == 'cpp'
         run: |
-          # Simple approach - create a combined file for testing
-          COMBINED_FILE="combined_test.cpp"
-          echo "#include <iostream>" > $COMBINED_FILE
-          echo "#include <vector>" >> $COMBINED_FILE
-          echo "#include <cassert>" >> $COMBINED_FILE
-          echo "using namespace std;" >> $COMBINED_FILE
-          
-          # Add solution.cpp content (excluding any includes)
-          grep -v "#include" solutions/solution.cpp >> $COMBINED_FILE
-          
-          # Add test.cpp content (excluding includes and using statements)
-          grep -v -E "^#include|^using" tests/test.cpp >> $COMBINED_FILE
-          
-          # Compile and run
-          g++ -std=c++17 -o test_program $COMBINED_FILE
+          # Approach 1: Compile solution.cpp to object file and link with test.cpp
+          g++ -std=c++17 -c solutions/solution.cpp -o solution.o
+          g++ -std=c++17 -c tests/test.cpp -o test.o
+          g++ -std=c++17 solution.o test.o -o test_program
           ./test_program
         continue-on-error: false
 

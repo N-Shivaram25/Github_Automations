@@ -51,4 +51,4 @@ void deleteList(ListNode* head) {
         head = head->next;
         delete temp;
     }
-}
+}//s
