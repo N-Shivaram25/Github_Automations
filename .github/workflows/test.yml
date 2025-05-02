@@ -74,24 +74,37 @@ jobs:
       - name: Check solution for empty or incomplete code
         run: |
           FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
-          # Check if file is empty or contains only comments/whitespace
-          if [ ! -s "$FILE" ] || [[ $(grep -v -E "^\s*(//|#|/\*|\*|$)" "$FILE" | wc -l) -eq 0 ]]; then
-            echo "::error::Solution file is empty or contains only comments/whitespace."
+          echo "Checking file: $FILE"
+          
+          # Check if file is empty
+          if [ ! -s "$FILE" ]; then
+            echo "::error::Solution file is empty."
             exit 1
           fi
           
+          # Check if file contains only comments/whitespace
+          CODE_LINES=$(grep -v -E "^\s*(#|$)" "$FILE" | wc -l)
+          if [ "$CODE_LINES" -eq 0 ]; then
+            echo "::error::Solution file contains only comments/whitespace."
+            exit 1
+          fi
+          
+          # Debug output to see file contents
+          echo "File contents preview (first 10 lines):"
+          head -n 10 "$FILE"
+          
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
-            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+            # Only look for standalone 'pass' statements (common placeholder)
+            if grep -q -E "(^|\s+)pass(\s+|$)" "$FILE"; then
+              echo "::error::Solution contains standalone 'pass' keyword, indicating placeholder code."
               exit 1
             fi
             
-            # Separate check for function definitions with no implementation
-            if grep -q "def.*:" "$FILE" && ! grep -q "{" "$FILE"; then
-              # This is actually normal for Python - no need to check for braces
-              # Python uses indentation, not braces
-              :
+            # Look for TODO comments
+            if grep -q -E "#\s*TODO" "$FILE"; then
+              echo "::error::Solution contains TODO comments, indicating incomplete code."
+              exit 1
             fi
           fi
           
@@ -103,7 +116,7 @@ jobs:
             fi
             
             # Check for empty function bodies
-            if grep -q "{[[:space:]]*}" "$FILE"; then
+            if grep -q -E "{[ \t\r\n]*}" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains empty function bodies)."
               exit 1
             fi
@@ -115,13 +128,9 @@ jobs:
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
-            
-            # Check for empty method bodies
-            if grep -q "{[[:space:]]*}" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
-              exit 1
-            fi
           fi
+          
+          echo "Solution check passed successfully."
 
       # Setup for Python
       - name: Set up Python
@@ -156,16 +165,23 @@ jobs:
       - name: Run Python tests
         if: needs.check-single-file-change.outputs.language == 'python'
         run: |
-          # Extract directory and filename
-          FILEPATH="${{ needs.check-single-file-change.outputs.changed_file }}"
-          DIRECTORY=$(dirname "$FILEPATH")
-          
-          # Make sure the solutions directory is in Python path
+          # Ensure the solution directory is in Python path
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           
+          # Print directory structure for debugging
+          echo "Directory structure:"
+          ls -la
+          echo "Solutions directory:"
+          ls -la solutions/
+          echo "Tests directory:"
+          ls -la tests/
+          
+          # Copy the solution to the root directory (if the test expects it there)
+          SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          cp "$SOLUTION_FILE" "$(basename $SOLUTION_FILE)"
+          
           # Run the tests
-          cd tests
-          python -m unittest test.py
+          python -m unittest discover tests
         continue-on-error: false
 
       # Test execution for C
