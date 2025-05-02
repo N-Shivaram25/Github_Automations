@@ -1,24 +1,14 @@
 #include "listnode.h"
 
-// Define removeElements as a standalone function
+// Function for student to implement
 ListNode* removeElements(ListNode* head, int val) {
-    ListNode dummy(0);
-    dummy.next = head;
-    ListNode* current = &dummy;
-
-    while (current->next) {
-        if (current->next->val == val) {
-            ListNode* temp = current->next;
-            current->next = current->next->next;
-            delete temp;
-        } else {
-            current = current->next;
-        }
-    }
-    return dummy.next;
+    // TODO: Write your code here
+    
+    // Placeholder return (remove this when implementing your solution)
+    return head;
 }
 
-// Utility Functions
+// Utility Functions (Do not modify below this line)
 ListNode* createList(const vector<int>& vals) {
     ListNode dummy(0);
     ListNode* tail = &dummy;

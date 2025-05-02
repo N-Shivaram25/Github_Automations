@@ -1,8 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include "../solutions/solution.cpp"  // Include solution.cpp directly
+#include "listnode.h"
 using namespace std;
+
+// Declare removeElements as extern since it's implemented in solution.cpp
+extern ListNode* removeElements(ListNode* head, int val);
 
 int main() {
     bool all_passed = true;

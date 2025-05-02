@@ -68,6 +68,10 @@ jobs:
             *.py)
               python3 -m py_compile "$CHANGED_FILE" || { echo "Error: Invalid Python code"; exit 1; }
               ;;
+            *)
+              echo "Error: Unsupported file extension for $CHANGED_FILE"
+              exit 1
+              ;;
           esac
 
       # Install dependencies based on file type
@@ -90,7 +94,11 @@ jobs:
               ;;
             *.py)
               sudo apt-get update
-              sudo apt-get install -y python3
+              sudo apt-get install -y python3 python3-pip
+              ;;
+            *)
+              echo "Error: Unsupported file extension for $CHANGED_FILE"
+              exit 1
               ;;
           esac
 
@@ -106,21 +114,30 @@ jobs:
           case "$EXT" in
             c)
               TEST_FILE="tests/test.c"
-              gcc -o test "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              SOLUTION_FILE="$CHANGED_FILE"
+              gcc -o test "$SOLUTION_FILE" "$TEST_FILE" -I. || { echo "Error: Compilation failed"; exit 1; }
               ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             cpp)
               TEST_FILE="tests/test.cpp"
-              g++ -o test "$TEST_FILE" -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
+              SOLUTION_FILE="$CHANGED_FILE"
+              g++ -o test "$SOLUTION_FILE" "$TEST_FILE" -I. -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
               ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             java)
               TEST_FILE="tests/Test.java"
-              javac "$CHANGED_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              SOLUTION_FILE="$CHANGED_FILE"
+              # Compile both solution and test files
+              javac "$SOLUTION_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              # Run the test file (assuming Test.java has the main method)
               java -cp tests Test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             py)
               TEST_FILE="tests/test.py"
               python3 "$TEST_FILE" || { echo "Error: Test execution failed"; exit 1; }
+              ;;
+            *)
+              echo "Error: Unsupported file extension for $CHANGED_FILE"
+              exit 1
               ;;
           esac
