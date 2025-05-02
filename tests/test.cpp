@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include "listnode.h"
 using namespace std;
 
 // Declare removeElements as extern since it's implemented in solution.cpp
@@ -16,10 +15,10 @@ int main() {
         ListNode* head = createList({1, 2, 6, 3, 4, 5, 6});
         ListNode* result = removeElements(head, 6);
         assert(toVector(result) == vector<int>({1, 2, 3, 4, 5}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -29,10 +28,10 @@ int main() {
         ListNode* head = createList({});
         ListNode* result = removeElements(head, 1);
         assert(toVector(result) == vector<int>({}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -42,10 +41,10 @@ int main() {
         ListNode* head = createList({7, 7, 7, 7});
         ListNode* result = removeElements(head, 7);
         assert(toVector(result) == vector<int>({}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -55,10 +54,10 @@ int main() {
         ListNode* head = createList({1, 2, 2, 1});
         ListNode* result = removeElements(head, 2);
         assert(toVector(result) == vector<int>({1, 1}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -68,10 +67,10 @@ int main() {
         ListNode* head = createList({1, 1, 1, 1});
         ListNode* result = removeElements(head, 1);
         assert(toVector(result) == vector<int>({}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -81,10 +80,10 @@ int main() {
         ListNode* head = createList({1, 2, 3, 4, 5});
         ListNode* result = removeElements(head, 3);
         assert(toVector(result) == vector<int>({1, 2, 4, 5}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -94,10 +93,10 @@ int main() {
         ListNode* head = createList({1, 2, 3, 3, 3, 4});
         ListNode* result = removeElements(head, 3);
         assert(toVector(result) == vector<int>({1, 2, 4}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -107,10 +106,10 @@ int main() {
         ListNode* head = createList({10, 20, 30});
         ListNode* result = removeElements(head, 40);
         assert(toVector(result) == vector<int>({10, 20, 30}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -120,10 +119,10 @@ int main() {
         ListNode* head = createList({6});
         ListNode* result = removeElements(head, 6);
         assert(toVector(result) == vector<int>({}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
@@ -133,18 +132,18 @@ int main() {
         ListNode* head = createList({6, 1, 6, 2, 6, 3, 6});
         ListNode* result = removeElements(head, 6);
         assert(toVector(result) == vector<int>({1, 2, 3}));
-        cout << "✓ Passed" << endl;
+        cout << "✅ Passed" << endl;
         deleteList(result);
     } catch (const std::exception& e) {
-        cout << "✗ Failed: Assertion failed" << endl;
+        cout << "❌ Failed: Assertion failed" << endl;
         all_passed = false;
     }
 
     cout << "\nTest Summary:" << endl;
     if (all_passed) {
-        cout << "All test cases passed! ✓" << endl;
+        cout << "All test cases passed! ✅" << endl;
     } else {
-        cout << "Some test cases failed! ✗" << endl;
+        cout << "Some test cases failed! ❌" << endl;
         exit(1); // Exit with error code to fail the GitHub Action
     }
 

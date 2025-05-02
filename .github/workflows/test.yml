@@ -1,4 +1,4 @@
-name: Run Tests for Solution Files
+name: Solution Testing Workflow
 
 on:
   push:
@@ -9,135 +9,164 @@ on:
       - 'solutions/**'
 
 jobs:
-  validate-and-test:
+  check-single-file-change:
     runs-on: ubuntu-latest
-
+    outputs:
+      changed_file: ${{ steps.check-files.outputs.changed_file }}
+      language: ${{ steps.detect-language.outputs.language }}
     steps:
-      # Checkout the repository
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # Fetch enough history to compare changes
+          fetch-depth: 0
 
-      # Check number of changed solution files
-      - name: Check changed solution files
-        id: check-changes
+      - name: Check for single file change
+        id: check-files
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^solutions/' | wc -l)
-          if [ $CHANGED_FILES -gt 1 ]; then
-            echo "Error: Multiple solution files changed. Only one solution file can be modified at a time."
-            exit 1
+          if [ "${{ github.event_name }}" == "push" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -E "^solutions/")
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E "^solutions/")
           fi
-          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
-
-      # Get changed file
-      - name: Get changed file
-        id: changed-file
-        run: |
-          CHANGED_FILE=$(git diff --name-only HEAD^ HEAD | grep '^solutions/' || true)
-          echo "Changed file: $CHANGED_FILE"
-          echo "file=$CHANGED_FILE" >> $GITHUB_OUTPUT
-
-      # Validate code completeness
-      - name: Validate code completeness
-        if: steps.check-changes.outputs.changed_files != '0'
-        run: |
-          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
-          if [ -z "$CHANGED_FILE" ]; then
-            echo "No solution file changed, skipping validation"
+          
+          echo "Changed solution files:"
+          echo "$CHANGED_FILES"
+          
+          # Count how many solution files were changed
+          CHANGED_COUNT=$(echo "$CHANGED_FILES" | grep -v "^$" | wc -l)
+          
+          if [ "$CHANGED_COUNT" -gt 1 ]; then
+            echo "::error::Multiple solution files were changed in this commit. Please modify only one solution file at a time."
+            exit 1
+          elif [ "$CHANGED_COUNT" -eq 0 ]; then
+            echo "No solution files were changed."
             exit 0
+          else
+            echo "changed_file=$CHANGED_FILES" >> $GITHUB_OUTPUT
           fi
-          
-          # Check if file is empty
-          if [ ! -s "$CHANGED_FILE" ]; then
-            echo "Error: Solution file is empty"
+
+      - name: Detect programming language
+        id: detect-language
+        if: steps.check-files.outputs.changed_file != ''
+        run: |
+          FILE="${{ steps.check-files.outputs.changed_file }}"
+          if [[ "$FILE" == *.py ]]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.c ]]; then
+            echo "language=c" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.cpp ]]; then
+            echo "language=cpp" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.java ]]; then
+            echo "language=java" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Unsupported file type: $FILE"
+            exit 1
+          fi
+
+  run-tests:
+    needs: check-single-file-change
+    if: needs.check-single-file-change.outputs.changed_file != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check solution for empty or incomplete code
+        run: |
+          FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          # Check if file is empty or contains only comments/whitespace
+          if [ ! -s "$FILE" ] || [[ $(grep -v -E "^\s*(//|#|/\*|\*|$)" "$FILE" | wc -l) -eq 0 ]]; then
+            echo "::error::Solution file is empty or contains only comments/whitespace."
             exit 1
           fi
           
-          # Basic syntax check based on file extension
-          case "$CHANGED_FILE" in
-            *.c)
-              gcc -fsyntax-only "$CHANGED_FILE" || { echo "Error: Invalid C code"; exit 1; }
-              ;;
-            *.cpp)
-              g++ -fsyntax-only "$CHANGED_FILE" || { echo "Error: Invalid C++ code"; exit 1; }
-              ;;
-            *.java)
-              javac -Xlint:all "$CHANGED_FILE" || { echo "Error: Invalid Java code"; exit 1; }
-              ;;
-            *.py)
-              python3 -m py_compile "$CHANGED_FILE" || { echo "Error: Invalid Python code"; exit 1; }
-              ;;
-            *)
-              echo "Error: Unsupported file extension for $CHANGED_FILE"
+          # If the file is a Python file, check for common patterns that indicate incomplete code
+          if [[ "$FILE" == *.py ]]; then
+            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE" || grep -q "def.*:" "$FILE" | grep -v -q "{"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
-              ;;
-          esac
-
-      # Install dependencies based on file type
-      - name: Install dependencies
-        if: steps.check-changes.outputs.changed_files != '0'
-        run: |
-          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
-          case "$CHANGED_FILE" in
-            *.c)
-              sudo apt-get update
-              sudo apt-get install -y gcc
-              ;;
-            *.cpp)
-              sudo apt-get update
-              sudo apt-get install -y g++ build-essential
-              ;;
-            *.java)
-              sudo apt-get update
-              sudo apt-get install -y openjdk-17-jdk
-              ;;
-            *.py)
-              sudo apt-get update
-              sudo apt-get install -y python3 python3-pip
-              ;;
-            *)
-              echo "Error: Unsupported file extension for $CHANGED_FILE"
-              exit 1
-              ;;
-          esac
-
-      # Run tests
-      - name: Run tests
-        if: steps.check-changes.outputs.changed_files != '0'
-        run: |
-          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
-          FILENAME=$(basename "$CHANGED_FILE")
-          EXT="${FILENAME##*.}"
+            fi
+          fi
           
-          # Map solution to corresponding test file and run
-          case "$EXT" in
-            c)
-              TEST_FILE="tests/test.c"
-              SOLUTION_FILE="$CHANGED_FILE"
-              gcc -o test "$SOLUTION_FILE" "$TEST_FILE" -I. || { echo "Error: Compilation failed"; exit 1; }
-              ./test || { echo "Error: Test execution failed"; exit 1; }
-              ;;
-            cpp)
-              TEST_FILE="tests/test.cpp"
-              SOLUTION_FILE="$CHANGED_FILE"
-              g++ -o test "$SOLUTION_FILE" "$TEST_FILE" -I. -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
-              ./test || { echo "Error: Test execution failed"; exit 1; }
-              ;;
-            java)
-              TEST_FILE="tests/Test.java"
-              SOLUTION_FILE="$CHANGED_FILE"
-              # Compile both solution and test files
-              javac "$SOLUTION_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
-              # Run the test file (assuming Test.java has the main method)
-              java -cp tests Test || { echo "Error: Test execution failed"; exit 1; }
-              ;;
-            py)
-              TEST_FILE="tests/test.py"
-              python3 "$TEST_FILE" || { echo "Error: Test execution failed"; exit 1; }
-              ;;
-            *)
-              echo "Error: Unsupported file extension for $CHANGED_FILE"
+          # If the file is a C/C++ file, check for function stubs
+          if [[ "$FILE" == *.cpp ]] || [[ "$FILE" == *.c ]]; then
+            if grep -q "// TODO" "$FILE" || grep -q "return.*;" "$FILE" | grep -v -q "{"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
-              ;;
-          esac
+            fi
+          fi
+          
+          # If the file is a Java file, check for method stubs
+          if [[ "$FILE" == *.java ]]; then
+            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+          fi
+
+      # Setup for Python
+      - name: Set up Python
+        if: needs.check-single-file-change.outputs.language == 'python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install Python dependencies
+        if: needs.check-single-file-change.outputs.language == 'python'
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy pandas
+          # Add more dependencies as needed for specific problems
+
+      # Setup for C/C++
+      - name: Set up C/C++ environment
+        if: needs.check-single-file-change.outputs.language == 'c' || needs.check-single-file-change.outputs.language == 'cpp'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      # Setup for Java
+      - name: Set up JDK
+        if: needs.check-single-file-change.outputs.language == 'java'
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Test execution for Python
+      - name: Run Python tests
+        if: needs.check-single-file-change.outputs.language == 'python'
+        run: |
+          # Ensure solution.py can be imported by tests
+          cp solutions/solution.py .
+          python tests/test.py
+        continue-on-error: false
+
+      # Test execution for C
+      - name: Run C tests
+        if: needs.check-single-file-change.outputs.language == 'c'
+        run: |
+          gcc -o test_program tests/test.c solutions/solution.c -lm
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for C++
+      - name: Run C++ tests
+        if: needs.check-single-file-change.outputs.language == 'cpp'
+        run: |
+          g++ -std=c++17 -o test_program tests/test.cpp solutions/solution.cpp
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for Java
+      - name: Run Java tests
+        if: needs.check-single-file-change.outputs.language == 'java'
+        run: |
+          mkdir -p build
+          javac -d build solutions/Solution.java tests/Test.java
+          cd build && java Test
+        continue-on-error: false
+
+      - name: Test Results Summary
+        run: |
+          echo "All tests have passed successfully for ${{ needs.check-single-file-change.outputs.changed_file }}!"
