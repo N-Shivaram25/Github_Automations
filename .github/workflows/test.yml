@@ -18,7 +18,7 @@ jobs:
       - name: Check for Multiple Solution Changes
         id: changed-files
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/')
+          changed_files=$(git diff --name-only HEAD~1 | grep '^solutions/')
           echo "$changed_files" > changed_files.txt
           count=$(echo "$changed_files" | wc -l)
           echo "Changed files: $count"
