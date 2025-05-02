@@ -16,12 +16,14 @@ jobs:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Fetch enough history to compare changes
 
       # Check number of changed solution files
       - name: Check changed solution files
         id: check-changes
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/' | wc -l)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^solutions/' | wc -l)
           if [ $CHANGED_FILES -gt 1 ]; then
             echo "Error: Multiple solution files changed. Only one solution file can be modified at a time."
             exit 1
@@ -32,16 +34,17 @@ jobs:
       - name: Get changed file
         id: changed-file
         run: |
-          CHANGED_FILE=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/' || true)
+          CHANGED_FILE=$(git diff --name-only HEAD^ HEAD | grep '^solutions/' || true)
+          echo "Changed file: $CHANGED_FILE"
           echo "file=$CHANGED_FILE" >> $GITHUB_OUTPUT
 
       # Validate code completeness
       - name: Validate code completeness
-        if: steps.changed-file.outputs.file != ''
+        if: steps.check-changes.outputs.changed_files != '0'
         run: |
           CHANGED_FILE=${{ steps.changed-file.outputs.file }}
           if [ -z "$CHANGED_FILE" ]; then
-            echo "No solution file changed"
+            echo "No solution file changed, skipping validation"
             exit 0
           fi
           
@@ -69,7 +72,7 @@ jobs:
 
       # Install dependencies based on file type
       - name: Install dependencies
-        if: steps.changed-file.outputs.file != ''
+        if: steps.check-changes.outputs.changed_files != '0'
         run: |
           CHANGED_FILE=${{ steps.changed-file.outputs.file }}
           case "$CHANGED_FILE" in
@@ -79,7 +82,7 @@ jobs:
               ;;
             *.cpp)
               sudo apt-get update
-              sudo apt-get install -y g++
+              sudo apt-get install -y g++ build-essential
               ;;
             *.java)
               sudo apt-get update
@@ -93,7 +96,7 @@ jobs:
 
       # Run tests
       - name: Run tests
-        if: steps.changed-file.outputs.file != ''
+        if: steps.check-changes.outputs.changed_files != '0'
         run: |
           CHANGED_FILE=${{ steps.changed-file.outputs.file }}
           FILENAME=$(basename "$CHANGED_FILE")
@@ -103,25 +106,21 @@ jobs:
           case "$EXT" in
             c)
               TEST_FILE="tests/test.c"
-              gcc -o test "$CHANGED_FILE" "$TEST_FILE" && ./test
+              gcc -o test "$CHANGED_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             cpp)
               TEST_FILE="tests/test.cpp"
-              g++ -o test "$CHANGED_FILE" "$TEST_FILE" && ./test
+              g++ -o test "$CHANGED_FILE" "$TEST_FILE" -std=c++11 || { echo "Error: Compilation failed"; exit 1; }
+              ./test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             java)
               TEST_FILE="tests/Test.java"
-              javac "$CHANGED_FILE" "$TEST_FILE"
-              java -cp tests Test
+              javac "$CHANGED_FILE" "$TEST_FILE" || { echo "Error: Compilation failed"; exit 1; }
+              java -cp tests Test || { echo "Error: Test execution failed"; exit 1; }
               ;;
             py)
               TEST_FILE="tests/test.py"
-              python3 "$TEST_FILE"
+              python3 "$TEST_FILE" || { echo "Error: Test execution failed"; exit 1; }
               ;;
           esac
-          
-          # Check test execution status
-          if [ $? -ne 0 ]; then
-            echo "Error: Test cases failed"
-            exit 1
-          fi

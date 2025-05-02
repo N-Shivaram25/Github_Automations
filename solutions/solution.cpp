@@ -37,7 +37,7 @@ ListNode* createList(const vector<int>& vals) {
     }
     return dummy.next;
 }
-
+//jfgj
 vector<int> toVector(ListNode* head) {
     vector<int> result;
     while (head) {
