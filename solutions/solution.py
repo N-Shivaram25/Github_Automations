@@ -32,7 +32,7 @@ class Solution:
                 # Bypass the node to be removed (Python will handle memory management)
                 current.next = current.next.next
             else:
-                # Move to the next node
+                # Move to the next nodes
                 current = current.next
         
         # Return the new head

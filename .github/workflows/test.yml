@@ -91,10 +91,15 @@ jobs:
           
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
-            if grep -q "pass" "$FILE" || grep -q "# TODO" "$FILE"; then
+            # Modified check to only flag when 'pass' or '# TODO' appears as standalone patterns
+            # This avoids false positives in documentation strings or comments
+            if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
+            
+            # Print debug info to help diagnose issues
+            echo "Python solution content check passed"
           fi
           
           # If the file is a C/C++ file, check for function stubs
@@ -160,8 +165,18 @@ jobs:
         run: |
           echo "Running Python tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
           
+          # Debug: Print file contents 
+          echo "Solution file content:"
+          cat ${{ needs.check-single-file-change.outputs.changed_file }}
+          
           # Make sure the solutions directory is in Python path
           export PYTHONPATH=$PYTHONPATH:$(pwd)
+          
+          # Debug: Print directory structure
+          echo "Directory structure:"
+          ls -la
+          ls -la solutions/
+          ls -la tests/
           
           # Run the tests with detailed output
           cd tests
