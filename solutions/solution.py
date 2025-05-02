@@ -25,7 +25,7 @@ class Solution:
         # Use a current pointer to traverse the list
         current = dummy
         
-        # Traverse the lists
+        # Traverse the listss
         while current.next:
             # If the next node has the target value
             if current.next.val == val:

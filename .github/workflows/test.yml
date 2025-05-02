@@ -14,6 +14,7 @@ jobs:
     outputs:
       changed_file: ${{ steps.check-files.outputs.changed_file }}
       language: ${{ steps.detect-language.outputs.language }}
+      file_basename: ${{ steps.parse-filename.outputs.basename }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -62,6 +63,14 @@ jobs:
             echo "::error::Unsupported file type: $FILE"
             exit 1
           fi
+      
+      - name: Parse filename
+        id: parse-filename
+        if: steps.check-files.outputs.changed_file != ''
+        run: |
+          FILE="${{ steps.check-files.outputs.changed_file }}"
+          BASENAME=$(basename "$FILE" | cut -d. -f1)
+          echo "basename=$BASENAME" >> $GITHUB_OUTPUT
 
   run-tests:
     needs: check-single-file-change
@@ -82,11 +91,15 @@ jobs:
           
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
-            # Only flag standalone pass statements
+            # Modified check to only flag when 'pass' or '# TODO' appears as standalone patterns
+            # This avoids false positives in documentation strings or comments
             if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
+            
+            # Print debug info to help diagnose issues
+            echo "Python solution content check passed"
           fi
           
           # If the file is a C/C++ file, check for function stubs
@@ -146,68 +159,43 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Test execution for Python - simplified approach for clearer debugging
+      # Test execution for Python
       - name: Run Python tests
         if: needs.check-single-file-change.outputs.language == 'python'
         run: |
           echo "Running Python tests for ${{ needs.check-single-file-change.outputs.changed_file }}"
           
-          # Create __init__.py files to ensure proper package structure
-          touch solutions/__init__.py
-          touch tests/__init__.py
+          # Debug: Print file contents 
+          echo "Solution file content:"
+          cat ${{ needs.check-single-file-change.outputs.changed_file }}
           
-          # Create a test runner file
-          cat > run_python_tests.py << 'EOF'
-import unittest
+          # Create a test runner script to ensure correct imports
+          cat > run_tests.py << 'EOF'
 import sys
 import os
+import unittest
 
-# Add the root directory to the Python path
-sys.path.insert(0, os.path.abspath('.'))
+# Add parent directory to path so we can import from solutions directory
+sys.path.insert(0, os.path.abspath('..'))
 
+# Try to import the solution
 try:
-    # Print debug info
-    print("Python path:", sys.path)
-    print("Current directory:", os.getcwd())
-    print("Directory contents:", os.listdir('.'))
-    print("Solutions directory contents:", os.listdir('solutions'))
-    print("Tests directory contents:", os.listdir('tests'))
-    
-    # Try importing from solution
-    print("Attempting to import from solution module...")
-    from solution import Solution, ListNode
-    print("Successfully imported Solution classes!")
-    
-    # Load test cases
-    print("Loading test cases...")
-    sys.path.insert(0, 'tests')
-    from test import TestRemoveElements
-    print("Test cases loaded successfully!")
-    
-    # Run tests
-    print("Running tests...")
-    test_suite = unittest.TestLoader().loadTestsFromTestCase(TestRemoveElements)
-    test_result = unittest.TextTestRunner(verbosity=2).run(test_suite)
-    
-    # Check test results
-    if not test_result.wasSuccessful():
-        print("Some tests failed!")
-        sys.exit(1)
-    else:
-        print("All tests passed!")
-        
-except Exception as e:
-    print(f"Error occurred: {e}")
-    import traceback
-    traceback.print_exc()
+    from solutions.solution import Solution, ListNode
+    print("Successfully imported Solution from solutions.solution")
+except ImportError as e:
+    print(f"Error importing solution: {e}")
     sys.exit(1)
+
+# Import test cases
+from tests.test import TestRemoveElements
+
+if __name__ == '__main__':
+    unittest.main(module='tests.test', verbosity=2)
 EOF
           
-          # Copy solution.py to root directory for easier imports
-          cp solutions/solution.py .
-          
-          # Run the test runner
-          python run_python_tests.py
+          # Run the tests with the custom runner
+          python run_tests.py
+        continue-on-error: false
 
       # Test execution for C
       - name: Run C tests
