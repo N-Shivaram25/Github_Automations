@@ -11,7 +11,7 @@ struct ListNode {
 
 // Basic implementation of removeElements
 ListNode* removeElements(ListNode* head, int val) {
-    // Create a dummy node
+    // Create a dummy nodes
    
     return dummy.next;
 }
