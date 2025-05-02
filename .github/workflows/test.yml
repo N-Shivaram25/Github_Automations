@@ -1,0 +1,57 @@
+name: Run Tests on Solution Change
+
+on:
+  push:
+    paths:
+      - 'solutions/**'
+  pull_request:
+    paths:
+      - 'solutions/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Check for Multiple Solution Changes
+        id: changed-files
+        run: |
+          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/')
+          echo "$changed_files" > changed_files.txt
+          count=$(echo "$changed_files" | wc -l)
+          echo "Changed files: $count"
+          if [ "$count" -gt 1 ]; then
+            echo "Error: More than one solution file has been changed." >&2
+            exit 1
+          fi
+          echo "file=$(head -n 1 changed_files.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Run Tests for C Solution
+        if: endsWith(steps.changed-files.outputs.file, '.c')
+        run: |
+          sudo apt update
+          sudo apt install -y gcc
+          gcc solutions/solution.c tests/test.c -o test_c
+          ./test_c
+
+      - name: Run Tests for C++ Solution
+        if: endsWith(steps.changed-files.outputs.file, '.cpp')
+        run: |
+          sudo apt update
+          sudo apt install -y g++
+          g++ solutions/solution.cpp tests/test.cpp -o test_cpp
+          ./test_cpp
+
+      - name: Run Tests for Python Solution
+        if: endsWith(steps.changed-files.outputs.file, '.py')
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 tests/test.py
+
+      - name: Run Tests for Java Solution
+        if: endsWith(steps.changed-files.outputs.file, '.java')
+        run: |
+          javac solutions/Solution.java tests/Test.java
+          java -cp . tests.Test
