@@ -1,6 +1,6 @@
 #include "listnode.h"
 
-// Define removeElements as a standalone function
+// Define removeElements as a standalone functions
 ListNode* removeElements(ListNode* head, int val) {
     ListNode dummy(0);
     dummy.next = head;
