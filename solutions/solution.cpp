@@ -46,7 +46,7 @@ vector<int> toVector(ListNode* head) {
     }
     return result;
 }
-
+//dd
 void deleteList(ListNode* head) {
     while (head) {
         ListNode* temp = head;
