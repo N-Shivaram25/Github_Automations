@@ -1,6 +1,6 @@
 #include <vector>
 using namespace std;
-//sdfs
+
 struct ListNode {
     int val;
     ListNode* next;
@@ -27,7 +27,7 @@ public:
     }
 };
 
-// Utility Functions (needed for test.cpp)ssss
+// Utility Functions
 ListNode* createList(const vector<int>& vals) {
     ListNode dummy(0);
     ListNode* tail = &dummy;
@@ -46,7 +46,7 @@ vector<int> toVector(ListNode* head) {
     }
     return result;
 }
-//dd
+
 void deleteList(ListNode* head) {
     while (head) {
         ListNode* temp = head;

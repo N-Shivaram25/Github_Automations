@@ -1,4 +1,4 @@
-name: Run Tests on Solution Change
+name: Run Tests for Solution Files
 
 on:
   push:
@@ -9,66 +9,119 @@ on:
       - 'solutions/**'
 
 jobs:
-  test:
+  validate-and-test:
     runs-on: ubuntu-latest
-    outputs:
-      changed_file: ${{ steps.changed-files.outputs.file }}
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Detect Changed File
-        id: changed-files
+      # Check number of changed solution files
+      - name: Check changed solution files
+        id: check-changes
         run: |
-          git fetch --prune --unshallow || true
-          base=$(git rev-parse HEAD~1 || echo "")
-          if [ -z "$base" ]; then
-            echo "Only one commit found. Defaulting to first file in solutions/"
-            file=$(find solutions -type f | head -n 1)
-            echo "file=$file" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          changed_files=$(git diff --name-only "$base" HEAD -- solutions/)
-          echo "$changed_files" > changed_files.txt
-          count=$(echo "$changed_files" | wc -l)
-          echo "Changed files: $count"
-
-          if [ "$count" -gt 1 ]; then
-            echo "Error: More than one solution file has been changed." >&2
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/' | wc -l)
+          if [ $CHANGED_FILES -gt 1 ]; then
+            echo "Error: Multiple solution files changed. Only one solution file can be modified at a time."
             exit 1
           fi
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
 
-          file=$(head -n 1 changed_files.txt)
-          echo "file=$file" >> "$GITHUB_OUTPUT"
-
-      - name: Debug Changed File
-        run: echo "Changed file: ${{ steps.changed-files.outputs.file }}"
-
-      - name: Run Tests for C Solution
-        if: endsWith(steps.changed-files.outputs.file, '.c')
+      # Get changed file
+      - name: Get changed file
+        id: changed-file
         run: |
-          sudo apt update
-          sudo apt install -y gcc
-          gcc solutions/solution.c tests/test.c -o test_c
-          ./test_c
+          CHANGED_FILE=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^solutions/' || true)
+          echo "file=$CHANGED_FILE" >> $GITHUB_OUTPUT
 
-      - name: Run Tests for C++ Solution
-        if: endsWith(steps.changed-files.outputs.file, '.cpp')
+      # Validate code completeness
+      - name: Validate code completeness
+        if: steps.changed-file.outputs.file != ''
         run: |
-          sudo apt update
-          sudo apt install -y g++
-          g++ solutions/solution.cpp tests/test.cpp -o test_cpp
-          ./test_cpp
+          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
+          if [ -z "$CHANGED_FILE" ]; then
+            echo "No solution file changed"
+            exit 0
+          fi
+          
+          # Check if file is empty
+          if [ ! -s "$CHANGED_FILE" ]; then
+            echo "Error: Solution file is empty"
+            exit 1
+          fi
+          
+          # Basic syntax check based on file extension
+          case "$CHANGED_FILE" in
+            *.c)
+              gcc -fsyntax-only "$CHANGED_FILE" || { echo "Error: Invalid C code"; exit 1; }
+              ;;
+            *.cpp)
+              g++ -fsyntax-only "$CHANGED_FILE" || { echo "Error: Invalid C++ code"; exit 1; }
+              ;;
+            *.java)
+              javac -Xlint:all "$CHANGED_FILE" || { echo "Error: Invalid Java code"; exit 1; }
+              ;;
+            *.py)
+              python3 -m py_compile "$CHANGED_FILE" || { echo "Error: Invalid Python code"; exit 1; }
+              ;;
+          esac
 
-      - name: Run Tests for Python Solution
-        if: endsWith(steps.changed-files.outputs.file, '.py')
+      # Install dependencies based on file type
+      - name: Install dependencies
+        if: steps.changed-file.outputs.file != ''
         run: |
-          python3 -m pip install --upgrade pip
-          python3 tests/test.py
+          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
+          case "$CHANGED_FILE" in
+            *.c)
+              sudo apt-get update
+              sudo apt-get install -y gcc
+              ;;
+            *.cpp)
+              sudo apt-get update
+              sudo apt-get install -y g++
+              ;;
+            *.java)
+              sudo apt-get update
+              sudo apt-get install -y openjdk-17-jdk
+              ;;
+            *.py)
+              sudo apt-get update
+              sudo apt-get install -y python3
+              ;;
+          esac
 
-      - name: Run Tests for Java Solution
-        if: endsWith(steps.changed-files.outputs.file, '.java')
+      # Run tests
+      - name: Run tests
+        if: steps.changed-file.outputs.file != ''
         run: |
-          javac solutions/Solution.java tests/Test.java
-          java -cp . tests.Test
+          CHANGED_FILE=${{ steps.changed-file.outputs.file }}
+          FILENAME=$(basename "$CHANGED_FILE")
+          EXT="${FILENAME##*.}"
+          
+          # Map solution to corresponding test file
+          case "$EXT" in
+            c)
+              TEST_FILE="tests/test.c"
+              gcc -o test "$CHANGED_FILE" "$TEST_FILE" && ./test
+              ;;
+            cpp)
+              TEST_FILE="tests/test.cpp"
+              g++ -o test "$CHANGED_FILE" "$TEST_FILE" && ./test
+              ;;
+            java)
+              TEST_FILE="tests/Test.java"
+              javac "$CHANGED_FILE" "$TEST_FILE"
+              java -cp tests Test
+              ;;
+            py)
+              TEST_FILE="tests/test.py"
+              python3 "$TEST_FILE"
+              ;;
+          esac
+          
+          # Check test execution status
+          if [ $? -ne 0 ]; then
+            echo "Error: Test cases failed"
+            exit 1
+          fi
