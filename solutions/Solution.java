@@ -12,7 +12,7 @@ public class Solution {
     /**
      * Removes all elements from a linked list that have a specific value.
      * 
-     * @param head the head of the linked list
+     * @param head the head of the linked lists
      * @param val the value to be removed
      * @return the head of the modified linked list
      */
