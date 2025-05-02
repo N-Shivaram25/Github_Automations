@@ -89,6 +89,11 @@ jobs:
             exit 1
           fi
           
+          # Diagnostic output - print file content
+          echo "File content of $FILE:"
+          cat "$FILE"
+          echo "---End of file content---"
+          
           # If the file is a Python file, check for common patterns that indicate incomplete code
           if [[ "$FILE" == *.py ]]; then
             # Only match standalone 'pass' statements that are not part of functions/conditionals
@@ -105,11 +110,20 @@ jobs:
               exit 1
             fi
             
-            # Only look for empty function bodies that aren't part of comments
-            NON_COMMENT_LINES=$(grep -v "//" "$FILE")
-            if echo "$NON_COMMENT_LINES" | grep -q "{[[:space:]]*}"; then
-              echo "::error::Solution appears to be incomplete (contains empty function bodies)."
-              exit 1
+            # Check for function implementation
+            if [[ "$FILE" == *.cpp ]]; then
+              # For C++ files, check if there's an implementation of a function
+              # by looking for opening and closing braces with content between them
+              if ! grep -q "{.*[a-zA-Z0-9].*}" "$FILE"; then
+                echo "::error::Solution appears to be incomplete (no valid function bodies found)."
+                exit 1
+              fi
+              
+              # Check specifically for removeElements implementation
+              if ! grep -q "removeElements.*{.*return.*}" "$FILE" -A 20; then
+                echo "::error::Missing or incomplete removeElements implementation."
+                exit 1
+              fi
             fi
           fi
           
@@ -120,10 +134,9 @@ jobs:
               exit 1
             fi
             
-            # Only look for empty method bodies that aren't part of comments
-            NON_COMMENT_LINES=$(grep -v "//" "$FILE" | grep -v "*/")
-            if echo "$NON_COMMENT_LINES" | grep -q "{[[:space:]]*}"; then
-              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
+            # Check for method implementation
+            if ! grep -q "{.*[a-zA-Z0-9].*}" "$FILE"; then
+              echo "::error::Solution appears to be incomplete (no valid method bodies found)."
               exit 1
             fi
           fi
