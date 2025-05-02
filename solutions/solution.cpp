@@ -27,7 +27,7 @@ public:
     }
 };
 
-// Utility Functions (needed for test.cpp)s
+// Utility Functions (needed for test.cpp)ss
 ListNode* createList(const vector<int>& vals) {
     ListNode dummy(0);
     ListNode* tail = &dummy;
