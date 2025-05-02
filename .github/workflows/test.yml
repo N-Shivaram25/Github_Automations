@@ -15,27 +15,30 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Check for Multiple Solution Changes
+      - name: Detect Changed File
         id: changed-files
         run: |
-          git fetch --depth=2 origin ${{ github.ref }} || true
-          base=$(git rev-parse HEAD^ || echo "")
+          git fetch --prune --unshallow || true
+          base=$(git rev-parse HEAD~1 || echo "")
           if [ -z "$base" ]; then
-            echo "Only one commit found. Skipping diff check."
+            echo "Only one commit found. Defaulting to current solution."
             file=$(find solutions -type f | head -n 1)
-            echo "file=$file" >> $GITHUB_OUTPUT
+            echo "file=$file" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          changed_files=$(git diff --name-only $base HEAD | grep '^solutions/')
+
+          changed_files=$(git diff --name-only "$base" HEAD -- solutions/)
           echo "$changed_files" > changed_files.txt
           count=$(echo "$changed_files" | wc -l)
           echo "Changed files: $count"
+          
           if [ "$count" -gt 1 ]; then
             echo "Error: More than one solution file has been changed." >&2
             exit 1
           fi
+
           file=$(head -n 1 changed_files.txt)
-          echo "file=$file" >> $GITHUB_OUTPUT
+          echo "file=$file" >> "$GITHUB_OUTPUT"
 
       - name: Run Tests for C Solution
         if: endsWith(steps.changed-files.outputs.file, '.c')
