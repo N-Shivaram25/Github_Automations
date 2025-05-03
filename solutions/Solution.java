@@ -5,16 +5,16 @@
  *     ListNode next;
  *     ListNode() {}
  *     ListNode(int val) { this.val = val; }
- *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }s
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
  * }
  */
 public class Solution {
     /**
      * Removes all elements from a linked list that have a specific value.
      * 
-     * @param head the head of the linked listss
+     * @param head the head of the linked list
      * @param val the value to be removed
-     * @return the head of the modified linked lists
+     * @return the head of the modified linked list
      */
     public ListNode removeElements(ListNode head, int val) {
         // Create a dummy node to handle edge cases (like removing the head)

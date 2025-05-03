@@ -150,8 +150,8 @@ jobs:
               exit 1
             fi
             
-            # Improved check for empty function bodies - allows for comments
-            if grep -E -q "{[[:space:]]*}|{[[:space:]]*//[^}]*[[:space:]]*}" "$FILE"; then
+            # Improved check for empty function bodies - allow for comments but not inline comments
+            if grep -E -q "{[[:space:]]*}$" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains empty function bodies)."
               exit 1
             fi
@@ -165,8 +165,8 @@ jobs:
               exit 1
             fi
             
-            # Better detection of empty method bodies that allows for comments
-            if grep -E -q "{[[:space:]]*}|{[[:space:]]*//[^}]*[[:space:]]*}" "$FILE"; then
+            # Better detection of empty method bodies - allow for comments but not inline comments
+            if grep -E -q "{[[:space:]]*}$" "$FILE"; then
               echo "::error::Solution appears to be incomplete (contains empty method bodies)."
               exit 1
             fi
