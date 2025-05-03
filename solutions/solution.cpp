@@ -9,7 +9,7 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Implement the main solution functionsss
+// Implement the main solution functionsssa
 ListNode* removeElements(ListNode* head, int val) {
     
 }
