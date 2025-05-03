@@ -7,7 +7,7 @@ struct ListNode {
     struct ListNode* next;
 };
 
-/**
+/**@
  * Function to remove all elements from a linked list that have a specific values
  * 
  * @param head pointer to the head of the list
