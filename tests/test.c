@@ -229,7 +229,7 @@ int main() {
     free(result6_arr);
     deleteList(result6);
 
-    // Test Case 7
+    // Test Case 7s
     printf("\nTest Case 7: Remove all occurrences of value 3 from list [1,2,3,3,3,4]\n");
     int test7[] = {1, 2, 3, 3, 3, 4};
     int expected7[] = {1, 2, 4};
