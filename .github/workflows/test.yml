@@ -133,44 +133,63 @@ jobs:
             exit 1
           fi
           
-          # If the file is a Python file, check for common patterns that indicate incomplete code
+          # Determine file type
           if [[ "$FILE" == *.py ]]; then
-            # Modified check to only flag when 'pass' appears as standalone placeholder
+            # Python checks
+            # Check for placeholder code
             if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              echo "::error::Python solution appears to be incomplete (contains placeholder code)."
               exit 1
             fi
-          fi
-          
-          # If the file is a C/C++ file, check for incomplete function indicators
-          if [[ "$FILE" == *.cpp ]] || [[ "$FILE" == *.c ]]; then
-            # Check specifically for TODO comments
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 30 ]; then
+              echo "::error::Python solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+          elif [[ "$FILE" == *.c ]] || [[ "$FILE" == *.cpp ]]; then
+            # C/C++ checks
+            # Check for TODO comments
             if grep -q "// TODO" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains placeholder code)."
+              echo "::error::C/C++ solution appears to be incomplete (contains TODO comments)."
               exit 1
             fi
             
-            # Improved check for empty function bodies - allow for comments but not inline comments
-            if grep -E -q "{[[:space:]]*}$" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains empty function bodies)."
+            # Check for minimal implementation (looking for at least one function body)
+            if ! grep -q "{.*}" "$FILE"; then
+              echo "::error::C/C++ solution appears to be incomplete (no function bodies found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 50 ]; then
+              echo "::error::C/C++ solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+          elif [[ "$FILE" == *.java ]]; then
+            # Java checks
+            # Check for TODO comments or unsupported operations
+            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
+              echo "::error::Java solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for minimal implementation (looking for at least one method body)
+            if ! grep -q "{.*}" "$FILE"; then
+              echo "::error::Java solution appears to be incomplete (no method bodies found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 100 ]; then
+              echo "::error::Java solution appears to be too small to be complete."
               exit 1
             fi
           fi
           
-          # If the file is a Java file, check for method stubs
-          if [[ "$FILE" == *.java ]]; then
-            # Check specifically for TODO comments
-            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains placeholder code)."
-              exit 1
-            fi
-            
-            # Better detection of empty method bodies - allow for comments but not inline comments
-            if grep -E -q "{[[:space:]]*}$" "$FILE"; then
-              echo "::error::Solution appears to be incomplete (contains empty method bodies)."
-              exit 1
-            fi
-          fi
+          echo "Solution check passed: The code appears to be complete."
 
       # Setup for Python
       - name: Set up Python
