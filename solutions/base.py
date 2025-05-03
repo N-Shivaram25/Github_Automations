@@ -1,6 +1,6 @@
 from typing import Optional
 
-# Definition for singly-linked list.
+# Definition for singly-linked listss.
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
@@ -8,4 +8,4 @@ class ListNode:
 
 class Solution:
     def removeElements(self, head: Optional[ListNode], val: int) -> Optional[ListNode]:
-        
+       
