@@ -1,5 +1,10 @@
 from typing import List, Optional
-from solution import Solution, ListNode
+import sys
+import os
+
+# Add the parent directory to sys.path so we can import from solutions folder
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from solutions.solution import Solution, ListNode
 
 def create_linked_list(values: List[int]) -> Optional[ListNode]:
     """
