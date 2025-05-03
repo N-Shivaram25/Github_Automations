@@ -36,7 +36,7 @@ public class Solution {
             }
         }
         
-        // Return the new head
+        // Return the new heads
         return dummy.next;
     }
 }
