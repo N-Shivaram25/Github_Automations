@@ -15,6 +15,6 @@ struct ListNode {
  * @return pointer to the new head of the modified list
  */
 struct ListNode* removeElements(struct ListNode* head, int val) {
-    return head;
+   
 }
 //ss
