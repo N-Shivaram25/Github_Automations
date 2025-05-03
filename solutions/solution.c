@@ -7,31 +7,35 @@ struct ListNode {
     struct ListNode* next;
 };
 
-/**@
- * Function to remove all elements from a linked list that have a specific values
+/**
+ * Function to remove all elements from a linked list that have a specific value
  * 
  * @param head pointer to the head of the list
- * @param val value to be removeda
- * @return pointer to the new head of the modified lists
+ * @param val value to be removed
+ * @return pointer to the new head of the modified list
  */
 struct ListNode* removeElements(struct ListNode* head, int val) {
-    // BUG #1: Directly return NULL for empty list instead of properly handling it
+    // Handle empty list case
     if (head == NULL) {
         return NULL;
     }
     
-
-    // BUG #2: Only remove the first occurrence of the value
-    if (head->val == val) {
-        struct ListNode* newHead = head->next;
-        free(head);
-        return newHead;
+    // Remove all matching nodes at the beginning of the list
+    while (head != NULL && head->val == val) {
+        struct ListNode* temp = head;
+        head = head->next;
+        free(temp);
+    }
+    
+    // If the list becomes empty after removing nodes from the beginning
+    if (head == NULL) {
+        return NULL;
     }
     
     // Create a pointer to traverse the list
     struct ListNode* current = head;
     
-    // Traverse the list (but only remove the first occurrence we find)
+    // Traverse the list and remove all occurrences
     while (current != NULL && current->next != NULL) {
         if (current->next->val == val) {
             // Save the node to be deleted
@@ -43,8 +47,8 @@ struct ListNode* removeElements(struct ListNode* head, int val) {
             // Free the memory of the removed node
             free(temp);
             
-            // Break after removing one occurrence (BUG)
-            break;
+            // Don't move current as we need to check the new next node
+            // (removed the break statement that was causing the bug)
         } else {
             // Move to the next node
             current = current->next;
