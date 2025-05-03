@@ -1,5 +1,6 @@
 #include <stdlib.h>
-
+#include <stdio.h>
+//01
 // Define the ListNode structure
 struct ListNode {
     int val;
@@ -14,5 +15,5 @@ struct ListNode {
  * @return pointer to the new head of the modified list
  */
 struct ListNode* removeElements(struct ListNode* head, int val) {
-   
+    return head;
 }
