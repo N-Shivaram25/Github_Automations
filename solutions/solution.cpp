@@ -2,7 +2,7 @@
 #include <vector>
 using namespace std;
 
-// Use the same struct definition as in test.cpp
+// Use the same struct definition as in test.cpp s
 struct ListNode {
     int val;
     ListNode* next;
