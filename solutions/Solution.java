@@ -26,7 +26,7 @@ public class Solution {
         
         // Traverse the list
         while (current.next != null) {
-            // If the next node has the target value
+            // If the next node has the target values
             if (current.next.val == val) {
                 // Bypass the node to be removed (Java garbage collector will handle memory)
                 current.next = current.next.next;
