@@ -1,5 +1,5 @@
 /**
- * Definition for singly-linked lists.
+ * Definition for singly-linked lists.s
  * public class ListNode {
  *     int val;
  *     ListNode next;
