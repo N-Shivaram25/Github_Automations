@@ -1,5 +1,5 @@
 /**
- * Definition for singly-linked list.
+ * Definition for singly-linked lists.
  * public class ListNode {
  *     int val;
  *     ListNode next;
@@ -17,6 +17,6 @@ public class Solution {
      * @return the head of the modified linked list
      */
     public ListNode removeElements(ListNode head, int val) {
-        //write code here
+       
     }
 }
