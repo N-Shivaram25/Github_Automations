@@ -156,8 +156,9 @@ jobs:
               exit 1
             fi
             
-            # Check for minimal implementation (looking for at least one function body)
-            if ! grep -q "{.*}" "$FILE"; then
+            # Check for function bodies using a more reliable pattern
+            # Look for opening and closing braces that might contain content between them
+            if ! grep -qE "[{][^}]*[}]" "$FILE"; then
               echo "::error::C/C++ solution appears to be incomplete (no function bodies found)."
               exit 1
             fi
@@ -177,7 +178,7 @@ jobs:
             fi
             
             # Check for minimal implementation (looking for at least one method body)
-            if ! grep -q "{.*}" "$FILE"; then
+            if ! grep -qE "[{][^}]*[}]" "$FILE"; then
               echo "::error::Java solution appears to be incomplete (no method bodies found)."
               exit 1
             fi
