@@ -148,24 +148,50 @@ jobs:
               exit 1
             fi
             
-          elif [[ "$FILE" == *.c ]] || [[ "$FILE" == *.cpp ]]; then
-            # C/C++ checks
+          elif [[ "$FILE" == *.c ]]; then
+            # C checks
             # Check for TODO comments
             if grep -q "// TODO" "$FILE"; then
-              echo "::error::C/C++ solution appears to be incomplete (contains TODO comments)."
+              echo "::error::C solution appears to be incomplete (contains TODO comments)."
+              exit 1
+            fi
+            
+            # Modified C check: Look for function definitions more reliably
+            if ! grep -q "(" "$FILE" || ! grep -q "{" "$FILE" || ! grep -q "}" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no function structures found)."
+              exit 1
+            fi
+            
+            # Check for actual implementation by looking for valid function patterns
+            if ! grep -q "[a-zA-Z_][a-zA-Z0-9_]*[ ]*(" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no function declarations found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 50 ]; then
+              echo "::error::C solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+          elif [[ "$FILE" == *.cpp ]]; then
+            # C++ checks
+            # Check for TODO comments
+            if grep -q "// TODO" "$FILE"; then
+              echo "::error::C++ solution appears to be incomplete (contains TODO comments)."
               exit 1
             fi
             
             # Check for function bodies using a more reliable pattern
             # Look for opening and closing braces that might contain content between them
             if ! grep -qE "[{][^}]*[}]" "$FILE"; then
-              echo "::error::C/C++ solution appears to be incomplete (no function bodies found)."
+              echo "::error::C++ solution appears to be incomplete (no function bodies found)."
               exit 1
             fi
             
             # Check if the file size is too small (likely not a complete solution)
             if [ $(wc -c <"$FILE") -lt 50 ]; then
-              echo "::error::C/C++ solution appears to be too small to be complete."
+              echo "::error::C++ solution appears to be too small to be complete."
               exit 1
             fi
             
