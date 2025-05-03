@@ -79,9 +79,9 @@ def main():
     result1_list = linked_list_to_list(result1)
     
     if lists_equal(result1_list, expected1):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected1)}")
         print(f"Got: {print_list(result1_list)}")
         all_passed = False
@@ -94,9 +94,9 @@ def main():
     result2_list = linked_list_to_list(result2)
     
     if lists_equal(result2_list, expected2):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected2)}")
         print(f"Got: {print_list(result2_list)}")
         all_passed = False
@@ -109,9 +109,9 @@ def main():
     result3_list = linked_list_to_list(result3)
     
     if lists_equal(result3_list, expected3):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected3)}")
         print(f"Got: {print_list(result3_list)}")
         all_passed = False
@@ -124,9 +124,9 @@ def main():
     result4_list = linked_list_to_list(result4)
     
     if lists_equal(result4_list, expected4):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected4)}")
         print(f"Got: {print_list(result4_list)}")
         all_passed = False
@@ -139,9 +139,9 @@ def main():
     result5_list = linked_list_to_list(result5)
     
     if lists_equal(result5_list, expected5):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected5)}")
         print(f"Got: {print_list(result5_list)}")
         all_passed = False
@@ -154,9 +154,9 @@ def main():
     result6_list = linked_list_to_list(result6)
     
     if lists_equal(result6_list, expected6):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected6)}")
         print(f"Got: {print_list(result6_list)}")
         all_passed = False
@@ -169,9 +169,9 @@ def main():
     result7_list = linked_list_to_list(result7)
     
     if lists_equal(result7_list, expected7):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected7)}")
         print(f"Got: {print_list(result7_list)}")
         all_passed = False
@@ -184,9 +184,9 @@ def main():
     result8_list = linked_list_to_list(result8)
     
     if lists_equal(result8_list, expected8):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected8)}")
         print(f"Got: {print_list(result8_list)}")
         all_passed = False
@@ -199,9 +199,9 @@ def main():
     result9_list = linked_list_to_list(result9)
     
     if lists_equal(result9_list, expected9):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected9)}")
         print(f"Got: {print_list(result9_list)}")
         all_passed = False
@@ -214,9 +214,9 @@ def main():
     result10_list = linked_list_to_list(result10)
     
     if lists_equal(result10_list, expected10):
-        print("✓ Passed")
+        print("✅ Passed")
     else:
-        print("✗ Failed")
+        print("❌ Failed")
         print(f"Expected: {print_list(expected10)}")
         print(f"Got: {print_list(result10_list)}")
         all_passed = False
@@ -224,10 +224,10 @@ def main():
     # Print summary
     print("\nTest Summary:")
     if all_passed:
-        print("All test cases passed! ✓")
+        print("All test cases passed! ✅")
         return 0
     else:
-        print("Some test cases failed! ✗")
+        print("Some test cases failed! ❌")
         return 1
 
 if __name__ == "__main__":

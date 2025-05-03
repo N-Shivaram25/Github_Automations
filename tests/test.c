@@ -112,9 +112,9 @@ int main() {
     int* result1_arr = toArray(result1, &result1_size);
     
     if (arraysEqual(result1_arr, result1_size, expected1, 5)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected1, 5);
         printf("Got: ");
@@ -133,9 +133,9 @@ int main() {
     int* result2_arr = toArray(result2, &result2_size);
     
     if (result2_size == 0) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected empty list, but got: ");
         printArray(result2_arr, result2_size);
         all_passed = false;
@@ -153,9 +153,9 @@ int main() {
     int* result3_arr = toArray(result3, &result3_size);
     
     if (result3_size == 0) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected empty list, but got: ");
         printArray(result3_arr, result3_size);
         all_passed = false;
@@ -174,9 +174,9 @@ int main() {
     int* result4_arr = toArray(result4, &result4_size);
     
     if (arraysEqual(result4_arr, result4_size, expected4, 2)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected4, 2);
         printf("Got: ");
@@ -196,9 +196,9 @@ int main() {
     int* result5_arr = toArray(result5, &result5_size);
     
     if (result5_size == 0) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected empty list, but got: ");
         printArray(result5_arr, result5_size);
         all_passed = false;
@@ -217,9 +217,9 @@ int main() {
     int* result6_arr = toArray(result6, &result6_size);
     
     if (arraysEqual(result6_arr, result6_size, expected6, 4)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected6, 4);
         printf("Got: ");
@@ -240,9 +240,9 @@ int main() {
     int* result7_arr = toArray(result7, &result7_size);
     
     if (arraysEqual(result7_arr, result7_size, expected7, 3)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected7, 3);
         printf("Got: ");
@@ -263,9 +263,9 @@ int main() {
     int* result8_arr = toArray(result8, &result8_size);
     
     if (arraysEqual(result8_arr, result8_size, expected8, 3)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected8, 3);
         printf("Got: ");
@@ -285,9 +285,9 @@ int main() {
     int* result9_arr = toArray(result9, &result9_size);
     
     if (result9_size == 0) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected empty list, but got: ");
         printArray(result9_arr, result9_size);
         all_passed = false;
@@ -306,9 +306,9 @@ int main() {
     int* result10_arr = toArray(result10, &result10_size);
     
     if (arraysEqual(result10_arr, result10_size, expected10, 3)) {
-        printf("✓ Passed\n");
+        printf("✅ Passed\n");
     } else {
-        printf("✗ Failed\n");
+        printf("❌ Failed\n");
         printf("Expected: ");
         printArray(expected10, 3);
         printf("Got: ");
@@ -321,10 +321,10 @@ int main() {
     // Print summary
     printf("\nTest Summary:\n");
     if (all_passed) {
-        printf("All test cases passed! ✓\n");
+        printf("All test cases passed! ✅\n");
         return 0;
     } else {
-        printf("Some test cases failed! ✗\n");
+        printf("Some test cases failed! ❌\n");
         return 1;
     }
 }
