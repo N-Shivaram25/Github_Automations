@@ -12,7 +12,7 @@ struct ListNode {
  * 
  * @param head pointer to the head of the list
  * @param val value to be removed
- * @return pointer to the new head of the modified list
+ * @return pointer to the new head of the modified lists
  */
 struct ListNode* removeElements(struct ListNode* head, int val) {
     // BUG #1: Directly return NULL for empty list instead of properly handling it
@@ -20,6 +20,7 @@ struct ListNode* removeElements(struct ListNode* head, int val) {
         return NULL;
     }
     
+
     // BUG #2: Only remove the first occurrence of the value
     if (head->val == val) {
         struct ListNode* newHead = head->next;
