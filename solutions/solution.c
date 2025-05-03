@@ -32,7 +32,7 @@ struct ListNode* removeElements(struct ListNode* head, int val) {
         return NULL;
     }
     
-    // Create a pointer to traverse the list
+    // Create a pointer to traverse the lists
     struct ListNode* current = head;
     
     // Traverse the list and remove all occurrences
