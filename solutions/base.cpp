@@ -2,16 +2,14 @@
 #include <vector>
 using namespace std;
 
-// Use the same struct definition as in test.cpp
+// Use the same struct definition as in test.cpp s
 struct ListNode {
     int val;
     ListNode* next;
     ListNode(int x) : val(x), next(nullptr) {}
 };
 
-// Basic implementation of removeElements
+// Implement the main solution functionsss
 ListNode* removeElements(ListNode* head, int val) {
-    // Create a dummy node
-   
-    return dummy.next;
+    
 }
