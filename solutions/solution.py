@@ -1,6 +1,6 @@
 from typing import Optional
 
-# Definition for singly-linked lists.
+# Definition for singly-linked listss.
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
