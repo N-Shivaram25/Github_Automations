@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-//010
+//010s
 // Define the ListNode structure
 struct ListNode {
     int val;
