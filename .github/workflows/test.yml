@@ -168,6 +168,18 @@ jobs:
               exit 1
             fi
             
+            # Check for simple return statements in functions (possible incomplete implementations)
+            if grep -qE "removeElements[[:space:]]*\([^)]*\)[[:space:]]*{[[:space:]]*return[[:space:]]+head[[:space:]]*;[[:space:]]*}" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (function body only contains 'return head;')."
+              exit 1
+            fi
+            
+            # Check if the function contains some real processing logic
+            if ! grep -qE "(if|while|for)" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no control structures found)."
+              exit 1
+            }
+            
             # Check if the file size is too small (likely not a complete solution)
             if [ $(wc -c <"$FILE") -lt 50 ]; then
               echo "::error::C solution appears to be too small to be complete."
@@ -301,6 +313,18 @@ jobs:
             SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
           fi
           echo "Running C tests for $SOLUTION_FILE"
+          
+          # Check for incomplete implementation specifically for removeElements function
+          if grep -qE "struct ListNode\* removeElements\([^)]*\)[[:space:]]*{[[:space:]]*return head;[[:space:]]*}" "$SOLUTION_FILE"; then
+            echo "::error::The removeElements function is incomplete (just returns head without processing)"
+            exit 1
+          fi
+          
+          # Verify function contains some processing logic
+          if ! grep -qE "removeElements[[:space:]]*\([^)]*\)[[:space:]]*{[[:space:]]*.*?if|while|for" "$SOLUTION_FILE"; then
+            echo "::error::The removeElements function appears to lack necessary logic for removing elements"
+            exit 1
+          fi
           
           # Compile the test file with the solution
           gcc -o test_program tests/test.c $SOLUTION_FILE -lm
