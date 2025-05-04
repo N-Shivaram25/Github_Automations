@@ -136,9 +136,31 @@ jobs:
           # Determine file type
           if [[ "$FILE" == *.py ]]; then
             # Python checks
-            # Check for placeholder code
+            # Check for placeholder code or empty function bodies
             if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
               echo "::error::Python solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check if the required function is empty or missing implementation
+            if grep -q "def removeElements" "$FILE"; then
+              # Check if the function has a body
+              FUNCTION_LINE=$(grep -n "def removeElements" "$FILE" | cut -d: -f1)
+              NEXT_LINE=$((FUNCTION_LINE + 1))
+              # Get the next line and check if it's properly indented (has implementation)
+              NEXT_LINE_CONTENT=$(sed -n "${NEXT_LINE}p" "$FILE")
+              if ! echo "$NEXT_LINE_CONTENT" | grep -q "^[[:space:]]\+"; then
+                echo "::error::Python removeElements function is incomplete (no implementation)."
+                exit 1
+              fi
+              
+              # Check if the next line is just a comment
+              if echo "$NEXT_LINE_CONTENT" | grep -q "^[[:space:]]\+#"; then
+                echo "::error::Python removeElements function only has comments, no implementation."
+                exit 1
+              fi
+            else
+              echo "::error::Python solution is missing the required removeElements function."
               exit 1
             fi
             
@@ -147,6 +169,13 @@ jobs:
               echo "::error::Python solution appears to be too small to be complete."
               exit 1
             fi
+            
+            # Check for syntax errors
+            python -m py_compile "$FILE" 2>/tmp/python_syntax.log || {
+              echo "::error::Python solution has syntax errors:"
+              cat /tmp/python_syntax.log
+              exit 1
+            }
             
           elif [[ "$FILE" == *.c ]]; then
             # C checks
