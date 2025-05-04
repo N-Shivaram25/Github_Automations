@@ -178,7 +178,7 @@ jobs:
             if ! grep -qE "(if|while|for)" "$FILE"; then
               echo "::error::C solution appears to be incomplete (no control structures found)."
               exit 1
-            }
+            fi
             
             # Check if the file size is too small (likely not a complete solution)
             if [ $(wc -c <"$FILE") -lt 50 ]; then
