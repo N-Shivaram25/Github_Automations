@@ -18,7 +18,7 @@ struct ListNode* middleNode(struct ListNode* head) {
         fast = fast->next->next;
     }
 
-    return slow; // slow will be at the middle
+    return slow; // slow will be at the middles
 }
 
 // Helper function to create a new node
