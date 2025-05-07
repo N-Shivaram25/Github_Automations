@@ -114,7 +114,7 @@ jobs:
           echo "Language: ${{ needs.check-single-file-change.outputs.language }}"
           ls -la
           ls -la solutions/
-          ls -la .github/workflows/
+          ls -la tests/
 
       - name: Check solution for empty or incomplete code
         run: |
@@ -185,15 +185,15 @@ jobs:
               exit 1
             fi
             
-            # Modified C check: Look for function definitions more reliably
-            if ! grep -q "(" "$FILE" || ! grep -q "{" "$FILE" || ! grep -q "}" "$FILE"; then
-              echo "::error::C solution appears to be incomplete (no function structures found)."
+            # Check for middleNode function
+            if ! grep -q "struct ListNode\* middleNode" "$FILE"; then
+              echo "::error::C solution is missing the required middleNode function."
               exit 1
-            fi
+            }
             
             # Check for actual implementation by looking for valid function patterns
-            if ! grep -q "[a-zA-Z_][a-zA-Z0-9_]*[ ]*(" "$FILE"; then
-              echo "::error::C solution appears to be incomplete (no function declarations found)."
+            if ! grep -q "struct ListNode\* middleNode[[:space:]]*([^)]*)[[:space:]]*{" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no middleNode function implementation found)."
               exit 1
             fi
             
@@ -288,19 +288,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Copy solution to test directory for languages that need it
-      - name: Copy solution files for tests
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            SOLUTION_FILE="${{ github.event.inputs.file_to_test }}"
-          else
-            SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
-          fi
-          
-          if [[ "${{ needs.check-single-file-change.outputs.language }}" == "python" ]] || [[ "$SOLUTION_FILE" == *.py ]]; then
-            cp "$SOLUTION_FILE" tests/
-          fi
-
       # Determine language for manual runs
       - name: Determine language for manual runs
         id: manual-language
@@ -329,7 +316,7 @@ jobs:
           
           # Run the tests with focused output
           cd tests
-          python test.py 2>&1 | grep -v "Solution file content" | grep -v "Directory structure"
+          python test.py
         continue-on-error: false
 
       # Test execution for C
@@ -343,23 +330,23 @@ jobs:
           fi
           echo "Running C tests for $SOLUTION_FILE"
           
-          # Check for incomplete implementation specifically for middleNode function
-          if grep -qE "struct ListNode\* middleNode\([^)]*\)[[:space:]]*{[[:space:]]*return head;[[:space:]]*}" "$SOLUTION_FILE" || grep -qE "struct ListNode\* middleNode\([^)]*\)[[:space:]]*{[[:space:]]*return NULL;[[:space:]]*}" "$SOLUTION_FILE"; then
-            echo "::error::The middleNode function is incomplete (just returns head or NULL without processing)"
+          # Create a directory for testing artifacts
+          mkdir -p build
+          
+          # Compile just the solution file as object file (without main)
+          gcc -c "$SOLUTION_FILE" -o build/solution.o
+          
+          # Compile the test file with the solution object
+          gcc -o build/test_runner tests/test.c build/solution.o
+          
+          # Run the tests and capture output
+          cd build && ./test_runner
+          
+          # Check if any test failed and exit with error if so
+          if [ $? -ne 0 ]; then
+            echo "::error::Tests failed!"
             exit 1
           fi
-          
-          # Verify function contains some processing logic
-          if ! grep -qE "middleNode[[:space:]]*\([^)]*\)[[:space:]]*{[[:space:]]*.*?if|while|for" "$SOLUTION_FILE"; then
-            echo "::error::The middleNode function appears to lack necessary logic for finding the middle node"
-            exit 1
-          fi
-          
-          # Compile the test file with the solution
-          gcc -o test_program tests/test.c $SOLUTION_FILE -lm
-          
-          # Run the tests
-          ./test_program
         continue-on-error: false
 
       # Test execution for C++
@@ -373,13 +360,23 @@ jobs:
           fi
           echo "Running C++ tests for $SOLUTION_FILE"
           
-          # Compile the solution and test files
-          g++ -std=c++17 -c $SOLUTION_FILE -o solution.o
-          g++ -std=c++17 -c tests/test.cpp -o test.o
-          g++ -std=c++17 solution.o test.o -o test_program
+          # Create a directory for testing artifacts
+          mkdir -p build
           
-          # Run the tests
-          ./test_program
+          # Compile the solution file as object file (without main)
+          g++ -std=c++17 -c "$SOLUTION_FILE" -o build/solution.o
+          
+          # Compile the test file with the solution object
+          g++ -std=c++17 tests/test.cpp build/solution.o -o build/test_runner
+          
+          # Run the tests and capture output
+          cd build && ./test_runner
+          
+          # Check if any test failed and exit with error if so
+          if [ $? -ne 0 ]; then
+            echo "::error::Tests failed!"
+            exit 1
+          fi
         continue-on-error: false
 
       # Test execution for Java
@@ -396,25 +393,19 @@ jobs:
           # Create build directory
           mkdir -p build
           
-          # Copy ListNode class definition from test file if Solution.java doesn't define it
-          # This is to address the issue with changing comments but still using the class
-          if ! grep -q "class ListNode" "$SOLUTION_FILE"; then
-            # Extract ListNode class from Test.java and put it in a temporary file
-            grep -A 20 "class ListNode" tests/Test.java > build/ListNode.java
-            # Adjust the package if needed
-          fi
-          
           # Compile Java files
-          if [ -f "build/ListNode.java" ]; then
-            javac -d build build/ListNode.java $SOLUTION_FILE tests/Test.java
-          else
-            javac -d build $SOLUTION_FILE tests/Test.java
-          fi
+          javac -d build "$SOLUTION_FILE" tests/Test.java
           
-          # Run the tests
+          # Run the tests and capture output
           cd build && java Test
+          
+          # Check if any test failed and exit with error if so
+          if [ $? -ne 0 ]; then
+            echo "::error::Tests failed!"
+            exit 1
+          fi
         continue-on-error: false
 
       - name: Test Results Summary
         run: |
-          echo "All tests have passed successfully!"
+          echo "✅ All tests have passed successfully!"

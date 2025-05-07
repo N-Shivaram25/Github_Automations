@@ -18,15 +18,28 @@ struct ListNode* middleNode(struct ListNode* head) {
         fast = fast->next->next;
     }
 
-    return slow; // slow will be at the middles
+    return slow; // slow will be at the middle
 }
 
-// Helper function to create a new node
-struct ListNode* createNode(int val) {
-    struct ListNode* newNode = (struct ListNode*)malloc(sizeof(struct ListNode));
-    newNode->val = val;
-    newNode->next = NULL;
-    return newNode;
+// Helper function to create a linked list from an array
+// This function is needed for tests
+struct ListNode* buildList(int* arr, int size) {
+    if (size == 0) return NULL;
+    
+    struct ListNode* head = (struct ListNode*)malloc(sizeof(struct ListNode));
+    head->val = arr[0];
+    head->next = NULL;
+    
+    struct ListNode* current = head;
+    for (int i = 1; i < size; i++) {
+        struct ListNode* newNode = (struct ListNode*)malloc(sizeof(struct ListNode));
+        newNode->val = arr[i];
+        newNode->next = NULL;
+        current->next = newNode;
+        current = newNode;
+    }
+    
+    return head;
 }
 
 // Helper function to print the list from a given node
@@ -38,21 +51,30 @@ void printList(struct ListNode* head) {
     printf("\n");
 }
 
-// Main function to test
+// Helper function to free memory of a linked list
+void freeList(struct ListNode* head) {
+    struct ListNode* temp;
+    while (head != NULL) {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
+/* 
+// Main function can be used for local testing, but should be commented out for GitHub Actions
 int main() {
     // Create the linked list 1->2->3->4->5
-    struct ListNode* head = createNode(1);
-    head->next = createNode(2);
-    head->next->next = createNode(3);
-    head->next->next->next = createNode(4);
-    head->next->next->next->next = createNode(5);
-
-    // Uncomment below to test with even number of nodes
-    // head->next->next->next->next->next = createNode(6);
-
+    struct ListNode* head = buildList((int[]){1, 2, 3, 4, 5}, 5);
+    
+    // Find middle node
     struct ListNode* mid = middleNode(head);
     printf("Middle node onward: ");
-    printList(mid); // Output: 3 4 5 or 4 5 6
-
+    printList(mid); // Output: 3 4 5
+    
+    // Free the memory
+    freeList(head);
+    
     return 0;
 }
+*/
