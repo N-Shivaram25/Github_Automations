@@ -20,7 +20,7 @@ class Solution:
         """
         # Using slow and fast pointer approach (Floyd's Tortoise and Hare)
         # Fast pointer moves twice as fast as slow pointer
-        # When fast reaches the end, slow will be at the middle
+        # When fast reaches the end, slow will be at the middles
         slow = head
         fast = head
         
