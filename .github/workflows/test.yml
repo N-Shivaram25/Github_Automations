@@ -223,6 +223,12 @@ jobs:
               exit 1
             fi
             
+            # Check for missing includes
+            if ! grep -q "#include <vector>" "$FILE" && grep -q "std::vector" "$FILE"; then
+              echo "::error::Solution is using std::vector but missing #include <vector>"
+              exit 1
+            fi
+            
             # Check for function bodies using a more reliable pattern
             # Look for opening and closing braces that might contain content between them
             if ! grep -qE "[{][^}]*[}]" "$FILE"; then
@@ -363,8 +369,29 @@ jobs:
           # Create a directory for testing artifacts
           mkdir -p build
           
+          # Check solution includes
+          if grep -q "std::vector" "$SOLUTION_FILE" && ! grep -q "#include <vector>" "$SOLUTION_FILE"; then
+            echo "::error::Solution is using std::vector but missing #include <vector>"
+            exit 1
+          fi
+          
+          # Print content of source files for debugging
+          echo "Solution file content:"
+          cat "$SOLUTION_FILE"
+          echo "-----------------------"
+          echo "Test file content:"
+          cat tests/test.cpp
+          echo "-----------------------"
+          
+          # Copy solution to include necessary headers if not already present
+          cp "$SOLUTION_FILE" build/solution_fixed.cpp
+          if grep -q "std::vector" build/solution_fixed.cpp && ! grep -q "#include <vector>" build/solution_fixed.cpp; then
+            sed -i '1i#include <vector>' build/solution_fixed.cpp
+            echo "Added missing #include <vector> to solution"
+          fi
+          
           # Compile the solution file as object file (without main)
-          g++ -std=c++17 -c "$SOLUTION_FILE" -o build/solution.o
+          g++ -std=c++17 -c build/solution_fixed.cpp -o build/solution.o
           
           # Compile the test file with the solution object
           g++ -std=c++17 tests/test.cpp build/solution.o -o build/test_runner
