@@ -9,7 +9,7 @@ struct ListNode {
 
 // Function to find the middle node
 struct ListNode* middleNode(struct ListNode* head) {
-    
+    //write code heer
 }
 
 // Helper function to create a linked list from an array
