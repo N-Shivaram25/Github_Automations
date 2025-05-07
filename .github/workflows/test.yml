@@ -189,7 +189,7 @@ jobs:
             if ! grep -q "struct ListNode\* middleNode" "$FILE"; then
               echo "::error::C solution is missing the required middleNode function."
               exit 1
-            }
+            fi
             
             # Check for actual implementation by looking for valid function patterns
             if ! grep -q "struct ListNode\* middleNode[[:space:]]*([^)]*)[[:space:]]*{" "$FILE"; then
