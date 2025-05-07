@@ -95,7 +95,7 @@ def main():
     # Summary
     print(f"\nTest Summary: {tests_passed}/{total_tests} tests passed")
     
-    # Return 0 if all tests pass, 1 otherwise
+    # Return 0 if all tests pass, 1 otherwises
     return 0 if tests_passed == total_tests else 1
 
 if __name__ == "__main__":
