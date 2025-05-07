@@ -13,52 +13,45 @@ struct ListNode {
 };
 
 // External function declarations (defined in solution.cpp)
-extern ListNode* middleNode(ListNode* head);
-
-// Using namespace for Solution class functions
-namespace Solution {
-    extern ListNode* buildList(const std::vector<int>& values);
-    extern void printList(ListNode* head);
-    extern void deleteList(ListNode* head);
+extern "C" {
+    ListNode* middleNode(ListNode* head);
 }
 
-// Helper function to check if two lists are identical
-bool areListsEqual(ListNode* list1, ListNode* list2) {
-    while (list1 != nullptr && list2 != nullptr) {
-        if (list1->val != list2->val) return false;
-        list1 = list1->next;
-        list2 = list2->next;
-    }
-    return (list1 == nullptr && list2 == nullptr);
-}
+// Forward declarations for Solution class functions
+class Solution {
+public:
+    static ListNode* buildList(const std::vector<int>& values);
+    static void printList(ListNode* head);
+    static void deleteList(ListNode* head);
+};
 
-// Helper function to find the middle node using a different approach (for verification)
+// Helper function to get the middle node using the naive way (for verification)
 ListNode* getMiddleNodeReference(ListNode* head) {
     // If the list is empty
     if (head == nullptr) return nullptr;
     
-    // Count the nodes
+    // Count the number of nodes
     int count = 0;
-    ListNode* curr = head;
-    while (curr != nullptr) {
+    ListNode* current = head;
+    while (current != nullptr) {
         count++;
-        curr = curr->next;
+        current = current->next;
     }
     
-    // Find the middle (count/2)
-    int middle = count / 2;
-    curr = head;
-    for (int i = 0; i < middle; i++) {
-        curr = curr->next;
+    // Find the middle node (floor division for even lengths)
+    int middleIndex = count / 2;
+    current = head;
+    for (int i = 0; i < middleIndex; i++) {
+        current = current->next;
     }
     
-    return curr;
+    return current;
 }
 
 // Function to run a test case
-bool runTest(const std::vector<int>& values, const std::string& testName) {
+bool runTest(const std::vector<int>& arr, const char* testName) {
     // Create list from array
-    ListNode* head = Solution::buildList(values);
+    ListNode* head = Solution::buildList(arr);
     
     // Get the expected result
     ListNode* expected = getMiddleNodeReference(head);
@@ -73,15 +66,10 @@ bool runTest(const std::vector<int>& values, const std::string& testName) {
     std::cout << "Test Case " << testName << ": ";
     if (passed) {
         std::cout << "✅ PASSED" << std::endl;
-        if (result != nullptr) {
-            std::cout << "  Expected and actual middle nodes match at value: " << result->val << std::endl;
-        } else {
-            std::cout << "  Expected and actual middle nodes are both null" << std::endl;
-        }
+        std::cout << "  Expected and actual middle nodes match at value: " << result->val << std::endl;
     } else {
         std::cout << "❌ FAILED" << std::endl;
-        std::cout << "  Expected middle at value: " << (expected ? std::to_string(expected->val) : "nullptr");
-        std::cout << ", got: " << (result ? std::to_string(result->val) : "nullptr") << std::endl;
+        std::cout << "  Expected middle at value: " << expected->val << ", got: " << result->val << std::endl;
     }
     
     // Clean up
