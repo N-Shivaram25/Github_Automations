@@ -375,6 +375,19 @@ jobs:
             exit 1
           fi
           
+          echo "Creating adapter for C++ solution..."
+          # Create an adapter file that exposes the Solution class methods correctly
+          cat > build/adapter.cpp << 'EOF'
+          #include <vector>
+          #include "../solutions/solution.cpp"
+
+          // Export the middleNode function as expected by the test
+          extern "C" ListNode* middleNode(ListNode* head) {
+              Solution solution;
+              return solution.middleNode(head);
+          }
+          EOF
+          
           # Print content of source files for debugging
           echo "Solution file content:"
           cat "$SOLUTION_FILE"
@@ -382,19 +395,15 @@ jobs:
           echo "Test file content:"
           cat tests/test.cpp
           echo "-----------------------"
+          echo "Adapter content:"
+          cat build/adapter.cpp
+          echo "-----------------------"
           
-          # Copy solution to include necessary headers if not already present
-          cp "$SOLUTION_FILE" build/solution_fixed.cpp
-          if grep -q "std::vector" build/solution_fixed.cpp && ! grep -q "#include <vector>" build/solution_fixed.cpp; then
-            sed -i '1i#include <vector>' build/solution_fixed.cpp
-            echo "Added missing #include <vector> to solution"
-          fi
+          # Compile the adapter file
+          g++ -std=c++17 -c build/adapter.cpp -o build/adapter.o
           
-          # Compile the solution file as object file (without main)
-          g++ -std=c++17 -c build/solution_fixed.cpp -o build/solution.o
-          
-          # Compile the test file with the solution object
-          g++ -std=c++17 tests/test.cpp build/solution.o -o build/test_runner
+          # Compile the test file with the adapter object
+          g++ -std=c++17 tests/test.cpp build/adapter.o -o build/test_runner
           
           # Run the tests and capture output
           cd build && ./test_runner
@@ -420,8 +429,63 @@ jobs:
           # Create build directory
           mkdir -p build
           
+          # Create a renamed copy of Solution.java to avoid class conflicts
+          mkdir -p build/src
+          cp "$SOLUTION_FILE" build/src/OriginalSolution.java
+          
+          # Create adapter for Solution classes
+          cat > build/src/SolutionAdapter.java << 'EOF'
+          // Import the original solution
+          class ListNode {
+              int val;
+              ListNode next;
+              
+              ListNode() {}
+              
+              ListNode(int val) {
+                  this.val = val;
+              }
+              
+              ListNode(int val, ListNode next) {
+                  this.val = val;
+                  this.next = next;
+              }
+          }
+
+          // Adapter class that matches the name expected by the test
+          public class Solution {
+              private static final OriginalSolution originalSolution = new OriginalSolution();
+              
+              public ListNode middleNode(ListNode head) {
+                  return originalSolution.middleNode(head);
+              }
+              
+              public static ListNode buildList(int[] values) {
+                  return OriginalSolution.buildList(values);
+              }
+              
+              public static void printList(ListNode head) {
+                  OriginalSolution.printList(head);
+              }
+          }
+          EOF
+          
+          # Modify test file to avoid class conflicts
+          cp tests/Test.java build/src/Test.java
+          
+          # Print contents for debugging
+          echo "Original Solution content:"
+          cat build/src/OriginalSolution.java
+          echo "-----------------------"
+          echo "Adapter content:"
+          cat build/src/SolutionAdapter.java
+          echo "-----------------------"
+          echo "Test content:"
+          cat build/src/Test.java
+          echo "-----------------------"
+          
           # Compile Java files
-          javac -d build "$SOLUTION_FILE" tests/Test.java
+          javac -d build build/src/*.java
           
           # Run the tests and capture output
           cd build && java Test
