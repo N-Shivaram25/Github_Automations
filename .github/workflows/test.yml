@@ -355,7 +355,7 @@ jobs:
           fi
         continue-on-error: false
 
-      # Test execution for C++ - FIXED to handle already defined helper functions
+      # Test execution for C++ - FIXED
       - name: Run C++ tests
         if: needs.check-single-file-change.outputs.language == 'cpp' || steps.manual-language.outputs.manual_language == 'cpp'
         run: |
@@ -369,16 +369,7 @@ jobs:
           # Create a directory for testing artifacts
           mkdir -p build
           
-          # First, check if helper functions are already defined in solution file
-          HELPERS_DEFINED=0
-          if grep -q "buildList" "$SOLUTION_FILE" && \
-             grep -q "deleteList" "$SOLUTION_FILE" && \
-             grep -q "printList" "$SOLUTION_FILE"; then
-            HELPERS_DEFINED=1
-            echo "Helper functions already defined in solution file"
-          fi
-          
-          # Create solution wrapper that adapts to whether helper functions are already available
+          # Create a new implementation file that will properly export the middleNode function
           echo '// Generated wrapper file for C++ solution
           #include <iostream>
           #include <vector>
@@ -394,78 +385,57 @@ jobs:
               return solution.middleNode(head);
           }' > build/solution_wrapper.cpp
           
-          # Only create helper implementations if they're not already in the solution file
-          if [ "$HELPERS_DEFINED" -eq 0 ]; then
-            echo '// Generated helper functions for test
-            #include <iostream>
-            #include <vector>
-            #include <string>
-            #include <cassert>
-            
-            #include "../'$SOLUTION_FILE'"
-            
-            // Implementation of Solution helper functions needed by test.cpp
-            ListNode* Solution::buildList(const std::vector<int>& values) {
-                if (values.empty()) return nullptr;
-                
-                ListNode* head = new ListNode(values[0]);
-                ListNode* current = head;
-                
-                for (size_t i = 1; i < values.size(); i++) {
-                    current->next = new ListNode(values[i]);
-                    current = current->next;
-                }
-                
-                return head;
-            }
-            
-            void Solution::deleteList(ListNode* head) {
-                while (head != nullptr) {
-                    ListNode* temp = head;
-                    head = head->next;
-                    delete temp;
-                }
-            }
-            
-            void Solution::printList(ListNode* head) {
-                while (head != nullptr) {
-                    std::cout << head->val;
-                    if (head->next != nullptr) {
-                        std::cout << " -> ";
-                    }
-                    head = head->next;
-                }
-                std::cout << std::endl;
-            }' > build/test_helpers.cpp
-            
-            # Compile the helper functions
-            g++ -std=c++17 -c build/test_helpers.cpp -o build/test_helpers.o
-            
-            # Set helpers object file to include in final linking
-            HELPERS_OBJ="build/test_helpers.o"
-          else
-            # Skip building helper functions if already defined
-            HELPERS_OBJ=""
-          fi
+          # First compile test_helpers.cpp containing solution helpers
+          echo '// Generated helper functions to resolve linking
+          #include <iostream>
+          #include <vector>
+          #include <string>
+          #include <cassert>
+          
+          #include "../'$SOLUTION_FILE'"
+          
+          // Implementation of Solution helper functions needed by test.cpp
+          ListNode* Solution::buildList(const std::vector<int>& values) {
+              if (values.empty()) return nullptr;
+              
+              ListNode* head = new ListNode(values[0]);
+              ListNode* current = head;
+              
+              for (size_t i = 1; i < values.size(); i++) {
+                  current->next = new ListNode(values[i]);
+                  current = current->next;
+              }
+              
+              return head;
+          }
+          
+          void Solution::deleteList(ListNode* head) {
+              while (head != nullptr) {
+                  ListNode* temp = head;
+                  head = head->next;
+                  delete temp;
+              }
+          }
+          
+          void Solution::printList(ListNode* head) {
+              while (head != nullptr) {
+                  std::cout << head->val;
+                  if (head->next != nullptr) {
+                      std::cout << " -> ";
+                  }
+                  head = head->next;
+              }
+              std::cout << std::endl;
+          }' > build/test_helpers.cpp
+          
+          # Compile the Solution helper functions
+          g++ -std=c++17 -c build/test_helpers.cpp -o build/test_helpers.o
           
           # Compile the solution wrapper file with the exported function
           g++ -std=c++17 -c build/solution_wrapper.cpp -o build/solution_wrapper.o
           
-          # Modify test.cpp to avoid function redefinition if they're already in solution
-          if [ "$HELPERS_DEFINED" -eq 1 ]; then
-            # Make a copy of the test file that we can modify
-            cp tests/test.cpp build/test_mod.cpp
-            
-            # Replace the Solution class forward declarations with a reference 
-            # to the implementation in solution.cpp
-            sed -i '/class Solution {/,/};/c\// Solution helper functions already defined in solution file' build/test_mod.cpp
-            
-            # Compile the modified test file
-            g++ -std=c++17 build/test_mod.cpp build/solution_wrapper.o -o build/test_runner
-          else
-            # Compile with original test file and helper implementation
-            g++ -std=c++17 tests/test.cpp build/solution_wrapper.o $HELPERS_OBJ -o build/test_runner
-          fi
+          # Compile the test file with all needed objects
+          g++ -std=c++17 tests/test.cpp build/solution_wrapper.o build/test_helpers.o -o build/test_runner
           
           # Run the tests and capture output
           cd build && ./test_runner
