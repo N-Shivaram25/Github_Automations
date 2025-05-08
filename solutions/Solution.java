@@ -28,7 +28,7 @@ public class Solution {
         while (current.next != null) {
             // If the next node has the target values
             if (current.next.val == val) {
-                // Bypass the node to be removed (Java garbage collector will handle memory)
+                // Bypass the node to be removed (Java garbage collector will handle memory)s
                 current.next = current.next.next;
             } else {
                 // Move to the next node
