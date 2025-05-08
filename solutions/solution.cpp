@@ -1,5 +1,5 @@
 #include <iostream>
-#include <vector>  // Added missing vector include
+#include <vector>
 
 // Definition for singly-linked list.
 struct ListNode {
@@ -62,4 +62,4 @@ public:
         }
         std::cout << std::endl;
     }
-};/////
+};

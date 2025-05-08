@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Definition for singly-linked list.ss
+// Definition for singly-linked list.
 struct ListNode {
     int val;
     struct ListNode *next;
@@ -9,7 +9,20 @@ struct ListNode {
 
 // Function to find the middle node
 struct ListNode* middleNode(struct ListNode* head) {
+    // Using the fast and slow pointer technique (Floyd's Tortoise and Hare)
+    struct ListNode* slow = head;
+    struct ListNode* fast = head;
     
+    // While fast pointer can move two steps
+    while (fast != NULL && fast->next != NULL) {
+        // Slow pointer moves one step
+        slow = slow->next;
+        // Fast pointer moves two steps
+        fast = fast->next->next;
+    }
+    
+    // When fast reaches the end, slow will be at the middle
+    return slow;
 }
 
 // Helper function to create a linked list from an array
@@ -68,4 +81,4 @@ int main() {
     
     return 0;
 }
-*////
+*/
