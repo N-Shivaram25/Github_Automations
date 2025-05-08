@@ -18,7 +18,7 @@ class Solution:
         Returns:
             The middle node of the linked list
         """
-        # Using slow and fast pointer approach (Floyd's Tortoise and Hare)
+        # Using slow and fast pointer approach (Floyd's Tortoise and Hare)s
         # Fast pointer moves twice as fast as slow pointer
         # When fast reaches the end, slow will be at the middles
         slow = head
