@@ -1,19 +1,30 @@
 #include <stdlib.h>
-#include <stdio.h>
-//01
-// Define the ListNode structure
+#include "solution.h" // Optional if you have a header file
+
+// Define the ListNode structure again if not using a header
 struct ListNode {
     int val;
     struct ListNode* next;
 };
 
-/**
- * Function to remove all elements from a linked list that have a specific value
- * 
- * @param head pointer to the head of the list
- * @param val value to be removed
- * @return pointer to the new head of the modified list
- */
 struct ListNode* removeElements(struct ListNode* head, int val) {
-    return head;
+    // Create a dummy node to simplify deletion (even at the head)
+    struct ListNode* dummy = (struct ListNode*)malloc(sizeof(struct ListNode));
+    dummy->next = head;
+
+    struct ListNode* current = dummy;
+
+    while (current->next != NULL) {
+        if (current->next->val == val) {
+            struct ListNode* toDelete = current->next;
+            current->next = current->next->next;
+            free(toDelete);
+        } else {
+            current = current->next;
+        }
+    }
+
+    struct ListNode* newHead = dummy->next;
+    free(dummy);
+    return newHead;
 }
