@@ -1,0 +1,16 @@
+{
+    "python.analysis.extraPaths": [
+        "./solutions"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.languageServer": "Pylance",
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}/solutions"
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}\\solutions"
+    },
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}/solutions"
+    }
+}
