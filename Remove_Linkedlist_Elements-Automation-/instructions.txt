@@ -1,0 +1,42 @@
+Local run Commands  :
+Be at delete_linkedlist folder
+
+Java 
+
+
+
+javac solutions/Solution.java tests/Test.java
+
+
+copy solutions\Solution.class .
+copy tests\Test.class .
+copy tests\ListNode.class .
+
+
+java Test
+
+
+
+
+Cpp(C++)
+
+g++ solutions/solution.cpp tests/test.cpp -o program_cpp.exe
+
+./program_cpp.exe
+
+
+
+C Language
+
+
+gcc solutions/solution.c tests/test.c -o program.exe
+
+./program.exe
+
+
+
+Python
+
+python solutions/solution.py
+
+python tests/test.py

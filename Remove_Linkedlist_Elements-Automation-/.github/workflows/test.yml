@@ -1,0 +1,420 @@
+name: Solution Testing Workflow
+
+on:
+  push:
+    paths:
+      - 'solutions/**'
+  pull_request:
+    paths:
+      - 'solutions/**'
+  # Add manual trigger option
+  workflow_dispatch:
+    inputs:
+      file_to_test:
+        description: 'Solution file to test (e.g. solutions/solution.cpp)'
+        required: true
+        default: 'solutions/solution.cpp'
+
+jobs:
+  check-single-file-change:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_file: ${{ steps.check-files.outputs.changed_file }}
+      language: ${{ steps.detect-language.outputs.language }}
+      file_basename: ${{ steps.parse-filename.outputs.basename }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set file from manual input
+        id: set-manual-file
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "changed_file=${{ github.event.inputs.file_to_test }}" >> $GITHUB_OUTPUT
+          echo "Using manually specified file: ${{ github.event.inputs.file_to_test }}"
+
+      - name: Check for single file change
+        id: check-files
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -E "^solutions/")
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E "^solutions/")
+          fi
+          
+          echo "Changed solution files:"
+          echo "$CHANGED_FILES"
+          
+          # Count how many solution files were changed
+          CHANGED_COUNT=$(echo "$CHANGED_FILES" | grep -v "^$" | wc -l)
+          
+          if [ "$CHANGED_COUNT" -gt 1 ]; then
+            echo "::error::Multiple solution files were changed in this commit. Please modify only one solution file at a time."
+            exit 1
+          elif [ "$CHANGED_COUNT" -eq 0 ]; then
+            echo "No solution files were changed."
+            exit 0
+          else
+            echo "changed_file=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine file to use
+        id: determine-file
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            FINAL_FILE="${{ steps.set-manual-file.outputs.changed_file }}"
+          else
+            FINAL_FILE="${{ steps.check-files.outputs.changed_file }}"
+          fi
+          echo "final_file=$FINAL_FILE" >> $GITHUB_OUTPUT
+          echo "Using file: $FINAL_FILE"
+
+      - name: Detect programming language
+        id: detect-language
+        if: steps.determine-file.outputs.final_file != ''
+        run: |
+          FILE="${{ steps.determine-file.outputs.final_file }}"
+          if [[ "$FILE" == *.py ]]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.c ]]; then
+            echo "language=c" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.cpp ]]; then
+            echo "language=cpp" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.java ]]; then
+            echo "language=java" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Unsupported file type: $FILE"
+            exit 1
+          fi
+      
+      - name: Parse filename
+        id: parse-filename
+        if: steps.determine-file.outputs.final_file != ''
+        run: |
+          FILE="${{ steps.determine-file.outputs.final_file }}"
+          BASENAME=$(basename "$FILE" | cut -d. -f1)
+          echo "basename=$BASENAME" >> $GITHUB_OUTPUT
+
+  run-tests:
+    needs: check-single-file-change
+    if: needs.check-single-file-change.outputs.changed_file != '' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Debug step to show environment
+      - name: Debug workflow environment
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Changed file: ${{ needs.check-single-file-change.outputs.changed_file }}"
+          echo "Language: ${{ needs.check-single-file-change.outputs.language }}"
+          ls -la
+          ls -la solutions/
+          ls -la .github/workflows/
+
+      - name: Check solution for empty or incomplete code
+        run: |
+          # Use workflow_dispatch input or change detection
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            FILE="${{ github.event.inputs.file_to_test }}"
+          else
+            FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          fi
+          
+          echo "Checking file: $FILE"
+          
+          # Check if file is empty
+          if [ ! -s "$FILE" ]; then
+            echo "::error::Solution file is empty."
+            exit 1
+          fi
+          
+          # Determine file type
+          if [[ "$FILE" == *.py ]]; then
+            # Python checks
+            # Check for placeholder code or empty function bodies
+            if grep -q "^[[:space:]]*pass[[:space:]]*$" "$FILE" || grep -q "^[[:space:]]*# TODO" "$FILE"; then
+              echo "::error::Python solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check if the required function is empty or missing implementation
+            if grep -q "def removeElements" "$FILE"; then
+              # Check if the function has a body
+              FUNCTION_LINE=$(grep -n "def removeElements" "$FILE" | cut -d: -f1)
+              NEXT_LINE=$((FUNCTION_LINE + 1))
+              # Get the next line and check if it's properly indented (has implementation)
+              NEXT_LINE_CONTENT=$(sed -n "${NEXT_LINE}p" "$FILE")
+              if ! echo "$NEXT_LINE_CONTENT" | grep -q "^[[:space:]]\+"; then
+                echo "::error::Python removeElements function is incomplete (no implementation)."
+                exit 1
+              fi
+              
+              # Check if the next line is just a comment
+              if echo "$NEXT_LINE_CONTENT" | grep -q "^[[:space:]]\+#"; then
+                echo "::error::Python removeElements function only has comments, no implementation."
+                exit 1
+              fi
+            else
+              echo "::error::Python solution is missing the required removeElements function."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 30 ]; then
+              echo "::error::Python solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+            # Check for syntax errors
+            python -m py_compile "$FILE" 2>/tmp/python_syntax.log || {
+              echo "::error::Python solution has syntax errors:"
+              cat /tmp/python_syntax.log
+              exit 1
+            }
+            
+          elif [[ "$FILE" == *.c ]]; then
+            # C checks
+            # Check for TODO comments
+            if grep -q "// TODO" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (contains TODO comments)."
+              exit 1
+            fi
+            
+            # Modified C check: Look for function definitions more reliably
+            if ! grep -q "(" "$FILE" || ! grep -q "{" "$FILE" || ! grep -q "}" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no function structures found)."
+              exit 1
+            fi
+            
+            # Check for actual implementation by looking for valid function patterns
+            if ! grep -q "[a-zA-Z_][a-zA-Z0-9_]*[ ]*(" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no function declarations found)."
+              exit 1
+            fi
+            
+            # Check for simple return statements in functions (possible incomplete implementations)
+            if grep -qE "removeElements[[:space:]]*\([^)]*\)[[:space:]]*{[[:space:]]*return[[:space:]]+head[[:space:]]*;[[:space:]]*}" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (function body only contains 'return head;')."
+              exit 1
+            fi
+            
+            # Check if the function contains some real processing logic
+            if ! grep -qE "(if|while|for)" "$FILE"; then
+              echo "::error::C solution appears to be incomplete (no control structures found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 50 ]; then
+              echo "::error::C solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+          elif [[ "$FILE" == *.cpp ]]; then
+            # C++ checks
+            # Check for TODO comments
+            if grep -q "// TODO" "$FILE"; then
+              echo "::error::C++ solution appears to be incomplete (contains TODO comments)."
+              exit 1
+            fi
+            
+            # Check for function bodies using a more reliable pattern
+            # Look for opening and closing braces that might contain content between them
+            if ! grep -qE "[{][^}]*[}]" "$FILE"; then
+              echo "::error::C++ solution appears to be incomplete (no function bodies found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 50 ]; then
+              echo "::error::C++ solution appears to be too small to be complete."
+              exit 1
+            fi
+            
+          elif [[ "$FILE" == *.java ]]; then
+            # Java checks
+            # Check for TODO comments or unsupported operations
+            if grep -q "// TODO" "$FILE" || grep -q "throw new UnsupportedOperationException" "$FILE"; then
+              echo "::error::Java solution appears to be incomplete (contains placeholder code)."
+              exit 1
+            fi
+            
+            # Check for minimal implementation (looking for at least one method body)
+            if ! grep -qE "[{][^}]*[}]" "$FILE"; then
+              echo "::error::Java solution appears to be incomplete (no method bodies found)."
+              exit 1
+            fi
+            
+            # Check if the file size is too small (likely not a complete solution)
+            if [ $(wc -c <"$FILE") -lt 100 ]; then
+              echo "::error::Java solution appears to be too small to be complete."
+              exit 1
+            fi
+          fi
+          
+          echo "Solution check passed: The code appears to be complete."
+
+      # Setup for Python
+      - name: Set up Python
+        if: needs.check-single-file-change.outputs.language == 'python' || endsWith(github.event.inputs.file_to_test, '.py')
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install Python dependencies
+        if: needs.check-single-file-change.outputs.language == 'python' || endsWith(github.event.inputs.file_to_test, '.py')
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy pandas
+          # Add more dependencies as needed for specific problems
+
+      # Setup for C/C++
+      - name: Set up C/C++ environment
+        if: needs.check-single-file-change.outputs.language == 'c' || needs.check-single-file-change.outputs.language == 'cpp' || endsWith(github.event.inputs.file_to_test, '.c') || endsWith(github.event.inputs.file_to_test, '.cpp')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      # Setup for Java
+      - name: Set up JDK
+        if: needs.check-single-file-change.outputs.language == 'java' || endsWith(github.event.inputs.file_to_test, '.java')
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Copy solution to test directory for languages that need it
+      - name: Copy solution files for tests
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SOLUTION_FILE="${{ github.event.inputs.file_to_test }}"
+          else
+            SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          fi
+          
+          if [[ "${{ needs.check-single-file-change.outputs.language }}" == "python" ]] || [[ "$SOLUTION_FILE" == *.py ]]; then
+            cp "$SOLUTION_FILE" tests/
+          fi
+
+      # Determine language for manual runs
+      - name: Determine language for manual runs
+        id: manual-language
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          FILE="${{ github.event.inputs.file_to_test }}"
+          if [[ "$FILE" == *.py ]]; then
+            echo "manual_language=python" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.c ]]; then
+            echo "manual_language=c" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.cpp ]]; then
+            echo "manual_language=cpp" >> $GITHUB_OUTPUT
+          elif [[ "$FILE" == *.java ]]; then
+            echo "manual_language=java" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Unsupported file type: $FILE"
+            exit 1
+          fi
+
+      # Test execution for Python
+      - name: Run Python tests
+        if: needs.check-single-file-change.outputs.language == 'python' || steps.manual-language.outputs.manual_language == 'python'
+        run: |
+          # Make sure the solutions directory is in Python path
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          
+          # Run the tests with focused output
+          cd tests
+          python test.py 2>&1 | grep -v "Solution file content" | grep -v "Directory structure"
+        continue-on-error: false
+
+      # Test execution for C
+      - name: Run C tests
+        if: needs.check-single-file-change.outputs.language == 'c' || steps.manual-language.outputs.manual_language == 'c'
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SOLUTION_FILE="${{ github.event.inputs.file_to_test }}"
+          else
+            SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          fi
+          echo "Running C tests for $SOLUTION_FILE"
+          
+          # Check for incomplete implementation specifically for removeElements function
+          if grep -qE "struct ListNode\* removeElements\([^)]*\)[[:space:]]*{[[:space:]]*return head;[[:space:]]*}" "$SOLUTION_FILE"; then
+            echo "::error::The removeElements function is incomplete (just returns head without processing)"
+            exit 1
+          fi
+          
+          # Verify function contains some processing logic
+          if ! grep -qE "removeElements[[:space:]]*\([^)]*\)[[:space:]]*{[[:space:]]*.*?if|while|for" "$SOLUTION_FILE"; then
+            echo "::error::The removeElements function appears to lack necessary logic for removing elements"
+            exit 1
+          fi
+          
+          # Compile the test file with the solution
+          gcc -o test_program tests/test.c $SOLUTION_FILE -lm
+          
+          # Run the tests
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for C++
+      - name: Run C++ tests
+        if: needs.check-single-file-change.outputs.language == 'cpp' || steps.manual-language.outputs.manual_language == 'cpp'
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SOLUTION_FILE="${{ github.event.inputs.file_to_test }}"
+          else
+            SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          fi
+          echo "Running C++ tests for $SOLUTION_FILE"
+          
+          # Compile the solution and test files
+          g++ -std=c++17 -c $SOLUTION_FILE -o solution.o
+          g++ -std=c++17 -c tests/test.cpp -o test.o
+          g++ -std=c++17 solution.o test.o -o test_program
+          
+          # Run the tests
+          ./test_program
+        continue-on-error: false
+
+      # Test execution for Java
+      - name: Run Java tests
+        if: needs.check-single-file-change.outputs.language == 'java' || steps.manual-language.outputs.manual_language == 'java'
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SOLUTION_FILE="${{ github.event.inputs.file_to_test }}"
+          else
+            SOLUTION_FILE="${{ needs.check-single-file-change.outputs.changed_file }}"
+          fi
+          echo "Running Java tests for $SOLUTION_FILE"
+          
+          # Create build directory
+          mkdir -p build
+          
+          # Copy ListNode class definition from test file if Solution.java doesn't define it
+          # This is to address the issue with changing comments but still using the class
+          if ! grep -q "class ListNode" "$SOLUTION_FILE"; then
+            # Extract ListNode class from Test.java and put it in a temporary file
+            grep -A 20 "class ListNode" tests/Test.java > build/ListNode.java
+            # Adjust the package if needed
+          fi
+          
+          # Compile Java files
+          if [ -f "build/ListNode.java" ]; then
+            javac -d build build/ListNode.java $SOLUTION_FILE tests/Test.java
+          else
+            javac -d build $SOLUTION_FILE tests/Test.java
+          fi
+          
+          # Run the tests
+          cd build && java Test
+        continue-on-error: false
+
+      - name: Test Results Summary
+        run: |
+          echo "All tests have passed successfully!"
